@@ -160,7 +160,7 @@ bool ImageProcessor::getOnlyBlue(const IplImage * hsv, IplImage * blue){
     return false;
 }
 //sk add
-IplImage* ImageProcessor::deleteNoise(const IplImage*image){//è¾“å…¥3é€šé“32ä½æµ®ç‚¹HSV, è¾“å‡º3é€šé“32ä½æµ®ç‚¹HSV
+IplImage* ImageProcessor::deleteNoise(const IplImage*image){//ÊäÈë3Í¨µÀ32Î»¸¡µãHSV, Êä³ö3Í¨µÀ32Î»¸¡µãHSV
     int colFlag[320];
     for(int i = 0; i < 320; i ++){
         colFlag[i] = 0;
@@ -173,7 +173,7 @@ IplImage* ImageProcessor::deleteNoise(const IplImage*image){//è¾“å…¥3é€šé“32ä½
     float* image_data = (float*)image->imageData;
     float* noise_data = (float*)noise->imageData;
 
-    int deep = 0, shallow = 500, avg = 0;    //ä»ä¸Šè‡ªä¸‹æ‰«æé«˜åº¦æœ€å¤§çš„è¾¹ç•Œå’Œæœ€å°çš„è¾¹ç•Œ
+    int deep = 0, shallow = 500, avg = 0;    //´ÓÉÏ×ÔÏÂÉ¨Ãè¸ß¶È×î´óµÄ±ß½çºÍ×îĞ¡µÄ±ß½ç
     for(int j = 0; j < width; j++){
         bool foundGreen = false;
         for(int i = 0; i < height; i++){
@@ -203,6 +203,7 @@ IplImage* ImageProcessor::deleteNoise(const IplImage*image){//è¾“å…¥3é€šé“32ä½
             deep = 239;
         }
     }
+
     avg /= width;
     int avglim = avg*2/3;
     int stab_little = 2, stab_big = 30;
@@ -244,7 +245,7 @@ IplImage* ImageProcessor::deleteNoise(const IplImage*image){//è¾“å…¥3é€šé“32ä½
         else
             j++;
     }//while
-    //æ›´æ–°colFlag
+    //¸üĞÂcolFlag
     for(int j = 0; j < width; j++){
         for(int i = 0; i < height; i++){
             float h = noise_data[i*width*3+j*3+0];
@@ -282,6 +283,7 @@ IplImage* ImageProcessor::deleteNoise(const IplImage*image){//è¾“å…¥3é€šé“32ä½
             }//if
         }
     }
+
     return noise;
 }
 IplImage* ImageProcessor::extractColorBlocks(const IplImage* hsv_img)

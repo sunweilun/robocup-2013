@@ -69,15 +69,21 @@ IplImage* WorldMap::getLines(const IplImage* hsv_img)
 IplImage* WorldMap::getField(const IplImage* hsv_img){
     ip.setBound(GRASS_BOUND);
     IplImage* eli_img = ip.deleteNoise(hsv_img);
+  //  cvNamedWindow("noise",  CV_WINDOW_AUTOSIZE);
+    //cvShowImage("noise", eli_img);
     ip.setBound(LINE_BOUND);
     IplImage* lines = ip.extractColorBlocks(eli_img);
-    cvReleaseImage(&eli_img);
+ //   cvNamedWindow("pale",  CV_WINDOW_AUTOSIZE);
+  //  cvShowImage("pale", lines);
     return lines;
 }
 IplImage* WorldMap::getGate(const IplImage* hsv_img){
     ip.setBound(BLUE_BOUND);
     IplImage* blue = cvCreateImage(cvGetSize(hsv_img), IPL_DEPTH_32F, 3);
     bool hasGate = ip.getOnlyBlue(hsv_img, blue);
+ //        cvNamedWindow("onlyblue",  CV_WINDOW_AUTOSIZE);
+  //      cvShowImage("onlyblue", blue);
+
     if(!hasGate){
         IplImage* black = cvCreateImage(cvGetSize(hsv_img), IPL_DEPTH_8U, 1);
         cvReleaseImage(&blue);
@@ -87,6 +93,8 @@ IplImage* WorldMap::getGate(const IplImage* hsv_img){
         int* bound = ip.scanUp(blue);
         IplImage* gate = ip.getBound(bound);
         cvReleaseImage(&blue);
+  //       cvNamedWindow("gate",  CV_WINDOW_AUTOSIZE);
+   //     cvShowImage("gate", gate);
         return gate;
     }
 }
@@ -98,6 +106,7 @@ void WorldMap::updateMap(const IplImage *img)
     //sk add
     IplImage* lines = getField(hsv_img);
     IplImage* gate = getGate(hsv_img);
+
     for(int i=0;i<MAP_LEN*MAP_LEN;i++)
     {
         int map_x = i%MAP_LEN;
@@ -120,9 +129,9 @@ void WorldMap::updateMap(const IplImage *img)
             memset(wMap->imageData+3*i,255,3);
         }
         if(legal(gate, left, down) || legal(gate, left, up) || legal(gate, right, down) || legal(gate, right, up)){
-            ((uchar*)wMap->imageData)[3*i+0] = 255;
-            ((uchar*)wMap->imageData)[3*i+1] = 0;
-            ((uchar*)wMap->imageData)[3*i+2] = 0;
+                ((uchar*)wMap->imageData)[3*i+0] = 255;
+                ((uchar*)wMap->imageData)[3*i+1] = 0;
+                ((uchar*)wMap->imageData)[3*i+2] = 0;
         }
     }
 

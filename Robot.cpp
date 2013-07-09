@@ -37,20 +37,25 @@ void Robot::turnRight(float angle)
 
 void Robot::drawMap() {
     printf("drawmap in!\n");
-    /*for(int i=0;i<12;i++)
+   //getImage();
+
+    for(int i=0;i<12;i++)
     {
         printf("for in!\n");
         getImage();
+        worldMap.updateMap(image);
         turnRight(30);
-    }*/
-    getImage();
+    }
+
+    //getImage();
+    //worldMap.updateMap(image);
+    //turnRight(180);
+    //getImage();
+    //worldMap.updateMap(image);
+    //moveForward(200,30);
+    //getImage();
     worldMap.updateMap(image);
-    turnRight(180);
-    getImage();
-    worldMap.updateMap(image);
-    moveForward(200,30);
-    getImage();
-    worldMap.updateMap(image);
+    worldMap.saveMap("result.png");
 }
 
 void Robot::getImage()
