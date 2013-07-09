@@ -3,8 +3,17 @@
 WorldMap::WorldMap()
 {
     wMap = cvCreateImage(cvSize(MAP_LEN,MAP_LEN),IPL_DEPTH_8U,3);
-    cvRectangle(wMap,cvPoint(0,0),cvPoint(wMap->width-1,wMap->height-1),cvScalar(0,255,0));
+    cvRectangle(wMap,cvPoint(0,0),cvPoint(wMap->width-1,wMap->height-1),CV_RGB(0,255,0),-1);
 }
+
+IplImage* WorldMap::getMap()
+{
+    IplImage *newMap = cvCreateImage(cvGetSize(wMap),IPL_DEPTH_8U,3);
+    memcpy(newMap->imageData,wMap->imageData,3*MAP_LEN*MAP_LEN);
+    return newMap;
+}
+
+
 
 void WorldMap::loadCamParms(const char* fileName)
 {
@@ -33,6 +42,17 @@ cv::Point2f WorldMap::coord_robot2screen(const cv::Point2f& rCoord)
     sCoord.x = (q1-p2*sCoord.y)/p1;
     return sCoord;
 }
+
+cv::Point2f WorldMap::coord_screen2robot(const cv::Point2f& sCoord)
+{
+    cv::Point2f rCoord;
+    rCoord.x = (camParms[0] * sCoord.x + camParms[1] * sCoord.y + camParms[2]) /
+     (camParms[6] * sCoord.x + camParms[7] * sCoord.y + 1);
+    rCoord.y = (camParms[3] * sCoord.x + camParms[4] * sCoord.y + camParms[5]) /
+     (camParms[6] * sCoord.x + camParms[7] * sCoord.y + 1);
+    return rCoord;
+}
+
 
 cv::Point2f WorldMap::coord_robot2world(const cv::Point2f& rCoord)
 {
