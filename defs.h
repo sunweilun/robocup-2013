@@ -1,8 +1,8 @@
-#define DEBUG_MAP 1;
+//#define DEBUG_MAP 0;
 #define DATA_PATH "/home/csai123/桌面/RoboCup/"
 #define CAM_PARMS_PATH "/home/csai123/robocup-test/calib/left-right"
 
-#define MAP_LEN 512
+#define MAP_LEN 700
 
 #define GRASS_H_LB 150
 #define GRASS_H_UB 190
@@ -18,11 +18,11 @@
 #define LINE_V_LB 0.9
 #define LINE_V_UB 1
 
-#define BLUE_H_LB 180
-#define BLUE_H_UB 380
-#define BLUE_S_LB 0.01
-#define BLUE_S_UB 0.5
-#define BLUE_V_LB 0.9
+#define BLUE_H_LB 209
+#define BLUE_H_UB 220
+#define BLUE_S_LB 0.58
+#define BLUE_S_UB 0.78
+#define BLUE_V_LB 0.89
 #define BLUE_V_UB 1
 
 #define BALL_H_LB 209
