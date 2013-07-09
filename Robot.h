@@ -7,18 +7,27 @@ class Robot
 {
     friend class WorldMap;
 private:
-    IplImage* image;
-    int imgCounter;
-    float x,y,ori;
+    bool radar; // 1 when radar is on, 0 otherwise
+    bool ballLocated,ownGoalLocated,oppGoalLocated;
+    ImageProcessor ip;
+    IplImage* image; // stores newly acquired image
+    int imgCounter; // counts number of images
+    float x,y,ori; // ori--orientateion
+    cv::Point2f ball_coord,ownGoal_coord,oppGoal_coord;
     WorldMap worldMap;
-    void getImage();
+    void getImage(); // get a new image and store it in *image
+    bool locateBall(); // locate ball_coord according to *image
+    void updateRadar();
 public:
     Robot();
+    void radarOn();
+    void radarOff();
     void setCoord(float x,float y,float ori);
-    void turnLeft(float angle);
-    void turnRight(float angle);
+    void turnLeft(float angle); // angle in degrees
+    void turnRight(float angle); // angle in degrees
     void moveForward(float dist,float max_speed);
-    void drawMap();
+    void drawMap(); // excutes predefined movement to draw the map
+    void findBall(); // rotate until the target ball is located
     ~Robot();
 };
 

@@ -286,6 +286,7 @@ IplImage* ImageProcessor::deleteNoise(const IplImage*image){//输入3通道32位浮点H
 
     return noise;
 }
+
 IplImage* ImageProcessor::extractColorBlocks(const IplImage* hsv_img)
 {
     IplImage* cb = cvCreateImage(cvGetSize(hsv_img),IPL_DEPTH_8U,1);
@@ -302,4 +303,9 @@ IplImage* ImageProcessor::extractColorBlocks(const IplImage* hsv_img)
         }
     }
     return cb;
+}
+
+std::vector<cv::Point3f> ImageProcessor::extractCircles(const IplImage* img)
+{
+    return ball_detection(img,h_bound,s_bound,v_bound);
 }

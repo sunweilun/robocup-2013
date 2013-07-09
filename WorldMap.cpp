@@ -3,8 +3,17 @@
 WorldMap::WorldMap()
 {
     wMap = cvCreateImage(cvSize(MAP_LEN,MAP_LEN),IPL_DEPTH_8U,3);
-    cvRectangle(wMap,cvPoint(0,0),cvPoint(wMap->width-1,wMap->height-1),cvScalar(0,255,0));
+    cvRectangle(wMap,cvPoint(0,0),cvPoint(wMap->width-1,wMap->height-1),CV_RGB(0,255,0),-1);
 }
+
+IplImage* WorldMap::getMap()
+{
+    IplImage *newMap = cvCreateImage(cvGetSize(wMap),IPL_DEPTH_8U,3);
+    memcpy(newMap->imageData,wMap->imageData,3*MAP_LEN*MAP_LEN);
+    return newMap;
+}
+
+
 
 void WorldMap::loadCamParms(const char* fileName)
 {
@@ -102,11 +111,7 @@ IplImage* WorldMap::getGate(const IplImage* hsv_img){
 void WorldMap::updateMap(const IplImage *img)
 {
     IplImage* hsv_img = get_hsv(img);
-    //IplImage *lines = getLines(hsv_img);
-    //sk add
-    IplImage* lines = getField(hsv_img);
-    IplImage* gate = getGate(hsv_img);
-
+    IplImage *lines = getLines(hsv_img);
     for(int i=0;i<MAP_LEN*MAP_LEN;i++)
     {
         int map_x = i%MAP_LEN;
@@ -127,11 +132,6 @@ void WorldMap::updateMap(const IplImage *img)
         if(legal(lines,left,down)||legal(lines,left,up)||legal(lines,right,down)||legal(lines,right,up))
         {
             memset(wMap->imageData+3*i,255,3);
-        }
-        if(legal(gate, left, down) || legal(gate, left, up) || legal(gate, right, down) || legal(gate, right, up)){
-                ((uchar*)wMap->imageData)[3*i+0] = 255;
-                ((uchar*)wMap->imageData)[3*i+1] = 0;
-                ((uchar*)wMap->imageData)[3*i+2] = 0;
         }
     }
 

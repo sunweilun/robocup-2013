@@ -21,6 +21,7 @@ public:
     bool leftBlue(IplImage* blue, int i, int j);
     bool rightBlue(IplImage* blue, int i, int j);
     bool stepUpJudge(IplImage* blue, int i, int j);
+    std::vector<cv::Point3f> extractCircles(const IplImage* img);
 };
 
 #endif // IMAGEPROCESSOR_H

@@ -36,14 +36,14 @@ void* myInit(void* arg) {
 
     while (true) {
         //int size = 0;
-        printf("3");
+        printf("3\n");
         pthread_mutex_lock(&ca_mutex);
-        if ((size = net_recv(raw_buff, MAX_MJPEG_SIZE, &(nst[1]))) <= 0) {
+        if ((size = net_recv(raw_buff, MAX_MJPEG_SIZE, &(nst[0]))) <= 0) {
             fprintf(stderr, "net_recv error\n");
             return (void*)0;
         }
         pthread_mutex_unlock(&ca_mutex);
-        printf("4");
+        printf("4\n");
     }
 }
 
