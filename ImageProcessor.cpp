@@ -57,3 +57,8 @@ IplImage* ImageProcessor::extractColorBlocks(const IplImage* hsv_img)
     }
     return cb;
 }
+
+std::vector<cv::Point3f> ImageProcessor::extractCircles(const IplImage* img)
+{
+    return ball_detection(img,h_bound,s_bound,v_bound);
+}
