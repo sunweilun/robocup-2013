@@ -10,6 +10,7 @@ Robot::Robot()
     imgCounter = 0;
     worldMap.loadCamParms(CAM_PARMS_PATH);
     image = NULL;
+<<<<<<< HEAD
     ballLocated = false;
     ownGoalLocated = false;
     oppGoalLocated = false;
@@ -28,6 +29,8 @@ void Robot::radarOff()
 {
     radar = false;
     cvDestroyWindow(RADAR_WND_NAME);
+=======
+>>>>>>> 68a2afa6a3ed34fd9bae2467f4368db8e9fd6acc
 }
 
 void Robot::setCoord(float x,float y,float ori)
@@ -43,7 +46,10 @@ void Robot::turnLeft(float angle)
     ori = ori>2*M_PI?ori-2*M_PI:ori;
     ori = ori<0?ori+2*M_PI:ori;
     motor_turnLeft(angle*M_PI/180);
+<<<<<<< HEAD
     updateRadar();
+=======
+>>>>>>> 68a2afa6a3ed34fd9bae2467f4368db8e9fd6acc
 }
 
 void Robot::turnRight(float angle)
@@ -52,11 +58,31 @@ void Robot::turnRight(float angle)
     ori = ori>2*M_PI?ori-2*M_PI:ori;
     ori = ori<0?ori+2*M_PI:ori;
     motor_turnRight(angle*M_PI/180);
+<<<<<<< HEAD
     updateRadar();
+=======
+>>>>>>> 68a2afa6a3ed34fd9bae2467f4368db8e9fd6acc
 }
 
 void Robot::drawMap() {
     printf("drawmap in!\n");
+<<<<<<< HEAD
+    /*for(int i=0;i<12;i++)
+    {
+        printf("for in!\n");
+        getImage();
+        turnRight(30);
+        worldMap.updateMap(image);
+    }*/
+    getImage();
+    worldMap.updateMap(image);
+    turnRight(180);
+    getImage();
+    worldMap.updateMap(image);
+    moveForward(200,30);
+    getImage();
+    worldMap.updateMap(image);
+=======
    //getImage();
 
     for(int i=0;i<12;i++)
@@ -76,11 +102,16 @@ void Robot::drawMap() {
     //getImage();
     worldMap.updateMap(image);
     worldMap.saveMap("result.png");
+>>>>>>> 68a2afa6a3ed34fd9bae2467f4368db8e9fd6acc
 }
 
 void Robot::getImage()
 {
+<<<<<<< HEAD
     usleep(SLEEPTIME_BEFORE_PHOTO); // sleep until the camera is still
+=======
+    usleep(1000000);
+>>>>>>> 68a2afa6a3ed34fd9bae2467f4368db8e9fd6acc
     getPhoto();
     char dp[] = DATA_PATH;
     char fn[1024];
@@ -97,6 +128,7 @@ void Robot::moveForward(float dist,float max_speed)
     x += dist*sin(ori);
     y += dist*cos(ori);
     goWithDistance(dist,max_speed);
+<<<<<<< HEAD
     updateRadar();
 }
 
@@ -117,7 +149,6 @@ bool Robot::locateBall()
 {
     if(!image)
         return false;
-    ip.setBound(BALL_BOUND);
     std::vector<cv::Point3f> circles = ip.extractCircles(image);
     if(circles.size()<=0)
     {
@@ -139,6 +170,8 @@ void Robot::findBall()
         turnRight(FIND_BALL_ANGLE);
         getImage();
     }
+=======
+>>>>>>> 68a2afa6a3ed34fd9bae2467f4368db8e9fd6acc
 }
 
 Robot::~Robot()

@@ -3,6 +3,7 @@
 WorldMap::WorldMap()
 {
     wMap = cvCreateImage(cvSize(MAP_LEN,MAP_LEN),IPL_DEPTH_8U,3);
+<<<<<<< HEAD
     cvRectangle(wMap,cvPoint(0,0),cvPoint(wMap->width-1,wMap->height-1),CV_RGB(0,255,0),-1);
 }
 
@@ -15,6 +16,11 @@ IplImage* WorldMap::getMap()
 
 
 
+=======
+    cvRectangle(wMap,cvPoint(0,0),cvPoint(wMap->width-1,wMap->height-1),cvScalar(0,255,0));
+}
+
+>>>>>>> 68a2afa6a3ed34fd9bae2467f4368db8e9fd6acc
 void WorldMap::loadCamParms(const char* fileName)
 {
         FILE* file = fopen(fileName,"r");
@@ -43,6 +49,7 @@ cv::Point2f WorldMap::coord_robot2screen(const cv::Point2f& rCoord)
     return sCoord;
 }
 
+<<<<<<< HEAD
 cv::Point2f WorldMap::coord_screen2robot(const cv::Point2f& sCoord)
 {
     cv::Point2f rCoord;
@@ -54,6 +61,8 @@ cv::Point2f WorldMap::coord_screen2robot(const cv::Point2f& sCoord)
 }
 
 
+=======
+>>>>>>> 68a2afa6a3ed34fd9bae2467f4368db8e9fd6acc
 cv::Point2f WorldMap::coord_robot2world(const cv::Point2f& rCoord)
 {
     cv::Point2f wCoord;
@@ -86,6 +95,8 @@ IplImage* WorldMap::getLines(const IplImage* hsv_img)
     cvReleaseImage(&eli_img);
     return lines;
 }
+<<<<<<< HEAD
+=======
 IplImage* WorldMap::getField(const IplImage* hsv_img){
     ip.setBound(GRASS_BOUND);
     IplImage* eli_img = ip.deleteNoise(hsv_img);
@@ -118,15 +129,20 @@ IplImage* WorldMap::getGate(const IplImage* hsv_img){
         return gate;
     }
 }
+>>>>>>> 68a2afa6a3ed34fd9bae2467f4368db8e9fd6acc
 
 void WorldMap::updateMap(const IplImage *img)
 {
     IplImage* hsv_img = get_hsv(img);
+<<<<<<< HEAD
+    IplImage *lines = getLines(hsv_img);
+=======
     //IplImage *lines = getLines(hsv_img);
     //sk add
     IplImage* lines = getField(hsv_img);
     IplImage* gate = getGate(hsv_img);
 
+>>>>>>> 68a2afa6a3ed34fd9bae2467f4368db8e9fd6acc
     for(int i=0;i<MAP_LEN*MAP_LEN;i++)
     {
         int map_x = i%MAP_LEN;
@@ -148,11 +164,14 @@ void WorldMap::updateMap(const IplImage *img)
         {
             memset(wMap->imageData+3*i,255,3);
         }
+<<<<<<< HEAD
+=======
         if(legal(gate, left, down) || legal(gate, left, up) || legal(gate, right, down) || legal(gate, right, up)){
                 ((uchar*)wMap->imageData)[3*i+0] = 255;
                 ((uchar*)wMap->imageData)[3*i+1] = 0;
                 ((uchar*)wMap->imageData)[3*i+2] = 0;
         }
+>>>>>>> 68a2afa6a3ed34fd9bae2467f4368db8e9fd6acc
     }
 
 #ifdef DEBUG_MAP

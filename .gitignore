@@ -1,0 +1,11 @@
+*.[oa]
+bin
+doxygen
+*.dat
+*.png
+motor
+obj
+*.cbp
+*.cbTemp
+*.depend
+*.layout
