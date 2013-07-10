@@ -1,5 +1,56 @@
 #include "Utils.h"
 
+void mouse_cb(int event,int x,int y,int flags,void* param)
+{
+    void** ptrs = (void**) param;
+    CvPoint* sc = (CvPoint*) ptrs[0];
+    CvPoint* rc = (CvPoint*) ptrs[1];
+    int *np = (int*) ptrs[2];
+    bool *next = (bool*) ptrs[3];
+    IplImage *image = (IplImage*) ptrs[4];
+    switch(event)
+    {
+    case CV_EVENT_LBUTTONDOWN:
+        printf("NewPoint:\n    (x,y):");
+        sc[*np].x = x;
+        sc[*np].y = y;
+        cvCircle(image,sc[*np],3,CV_RGB(255,255,0));
+        cvShowImage("Calib",image);
+        cvWaitKey(100);
+        scanf("%d %d",&rc[*np].x,&rc[*np].y);
+        cvCircle(image,sc[*np],3,CV_RGB(100,100,100));
+        *np++;
+        *next = true;
+        break;
+    case CV_EVENT_RBUTTONDOWN:
+        *next = false;
+        break;
+    }
+}
+
+void calib()
+{
+    CvPoint sc[100],rc[100];
+    int np = 0;
+    bool next = true;
+    IplImage* image = loadDatImage("0.dat");
+    void* ptrs[5];
+    ptrs[0] = (void*) sc;
+    ptrs[1] = (void*) rc;
+    ptrs[2] = (void*) &np;
+    ptrs[3] = (void*) &next;
+    ptrs[4] = (void*) image;
+    cvNamedWindow("Calib");
+    cvSetMouseCallback("Calib",mouse_cb,ptrs);
+    while(next)
+    {
+        cvShowImage("Calib",image);
+        cvWaitKey(100);
+    }
+    cvDestroyWindow("Calib");
+
+}
+
 IplImage *loadDatImage(char *fn)
 {
     IplImage *image;

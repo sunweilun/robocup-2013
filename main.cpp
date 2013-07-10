@@ -3,6 +3,7 @@
 
 int main()
 {
+    calib();
     Robot robot;
     robot.radarOn();
     robot.drawMap();
