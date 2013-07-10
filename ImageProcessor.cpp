@@ -120,6 +120,9 @@ IplImage* ImageProcessor::getBound(int *bound){
     //cout << "head: " << head << "," << bound[head] << "\ttail: " << tail << "," << bound[tail] << endl;
     IplImage* gate = cvCreateImage(cvSize(width, height), IPL_DEPTH_8U, 1);
     uchar* gate_data = (uchar*)gate->imageData;
+    for(int i = 0; i <  gate->width*gate->height; i++){
+                gate_data[i] = 0;
+    }
     for(int j = 0; j < width; j++){
         int i = bound[j];
         if(i > 0 && i < 239){

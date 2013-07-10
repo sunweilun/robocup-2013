@@ -7,6 +7,7 @@ class Robot
 {
     friend class WorldMap;
 private:
+    cv::Point2f world2image(const cv::Point2f& coord);
     bool radar; // 1 when radar is on, 0 otherwise
     bool ballLocated,ownGoalLocated,oppGoalLocated;
     ImageProcessor ip;
@@ -17,6 +18,7 @@ private:
     WorldMap worldMap;
     void getImage(); // get a new image and store it in *image
     bool locateBall(); // locate ball_coord according to *image
+    bool locateOwnGate();
     void updateRadar();
 public:
     Robot();

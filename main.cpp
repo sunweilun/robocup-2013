@@ -6,6 +6,9 @@ int main()
     Robot robot;
     robot.radarOn();
     robot.drawMap();
+    robot.findBall();
+
+    robot.radarOff();
     return 0;
 
 }
