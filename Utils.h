@@ -7,6 +7,8 @@
 
 using namespace std;
 
+void calib();
+
 IplImage *loadDatImage(char *fn);
 
 IplImage* get_hsv(const IplImage* img);
