@@ -4,6 +4,7 @@
 int main()
 {
     Robot robot;
+    robot.radarOn();
     robot.drawMap();
     return 0;
 

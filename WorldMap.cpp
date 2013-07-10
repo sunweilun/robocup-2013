@@ -43,6 +43,17 @@ cv::Point2f WorldMap::coord_robot2screen(const cv::Point2f& rCoord)
     return sCoord;
 }
 
+cv::Point2f WorldMap::coord_screen2robot(const cv::Point2f& sCoord)
+{
+    cv::Point2f rCoord;
+    rCoord.x = (camParms[0] * sCoord.x + camParms[1] * sCoord.y + camParms[2]) /
+     (camParms[6] * sCoord.x + camParms[7] * sCoord.y + 1);
+    rCoord.y = (camParms[3] * sCoord.x + camParms[4] * sCoord.y + camParms[5]) /
+     (camParms[6] * sCoord.x + camParms[7] * sCoord.y + 1);
+    return rCoord;
+}
+
+
 cv::Point2f WorldMap::coord_robot2world(const cv::Point2f& rCoord)
 {
     cv::Point2f wCoord;
@@ -84,6 +95,7 @@ IplImage* WorldMap::getField(const IplImage* hsv_img){
     IplImage* lines = ip.extractColorBlocks(eli_img);
  //   cvNamedWindow("pale",  CV_WINDOW_AUTOSIZE);
   //  cvShowImage("pale", lines);
+  cvReleaseImage(&eli_img);
     return lines;
 }
 IplImage* WorldMap::getGate(const IplImage* hsv_img){
@@ -111,7 +123,11 @@ IplImage* WorldMap::getGate(const IplImage* hsv_img){
 void WorldMap::updateMap(const IplImage *img)
 {
     IplImage* hsv_img = get_hsv(img);
-    IplImage *lines = getLines(hsv_img);
+    //IplImage *lines = getLines(hsv_img);
+    //sk add
+    IplImage* lines = getField(hsv_img);
+    IplImage* gate = getGate(hsv_img);
+
     for(int i=0;i<MAP_LEN*MAP_LEN;i++)
     {
         int map_x = i%MAP_LEN;
@@ -133,6 +149,11 @@ void WorldMap::updateMap(const IplImage *img)
         {
             memset(wMap->imageData+3*i,255,3);
         }
+        if(legal(gate, left, down) || legal(gate, left, up) || legal(gate, right, down) || legal(gate, right, up)){
+                ((uchar*)wMap->imageData)[3*i+0] = 255;
+                ((uchar*)wMap->imageData)[3*i+1] = 0;
+                ((uchar*)wMap->imageData)[3*i+2] = 0;
+        }
     }
 
 #ifdef DEBUG_MAP
@@ -143,6 +164,7 @@ void WorldMap::updateMap(const IplImage *img)
 #endif
     cvReleaseImage(&hsv_img);
     cvReleaseImage(&lines);
+    cvReleaseImage(&gate);
 }
 
 void WorldMap::showMap(const char* wndName)

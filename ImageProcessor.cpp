@@ -160,7 +160,7 @@ bool ImageProcessor::getOnlyBlue(const IplImage * hsv, IplImage * blue){
     return false;
 }
 //sk add
-IplImage* ImageProcessor::deleteNoise(const IplImage*image){//输入3通道32位浮点HSV, 输出3通道32位浮点HSV
+IplImage* ImageProcessor::deleteNoise(const IplImage*image){//锟斤拷锟斤拷3通锟斤拷32位锟斤拷锟斤拷HSV, 锟斤拷锟斤拷3通锟斤拷32位锟斤拷锟斤拷HSV
     int colFlag[320];
     for(int i = 0; i < 320; i ++){
         colFlag[i] = 0;
@@ -173,7 +173,7 @@ IplImage* ImageProcessor::deleteNoise(const IplImage*image){//输入3通道32位浮点H
     float* image_data = (float*)image->imageData;
     float* noise_data = (float*)noise->imageData;
 
-    int deep = 0, shallow = 500, avg = 0;    //从上自下扫描高度最大的边界和最小的边界
+    int deep = 0, shallow = 500, avg = 0;    //锟斤拷锟斤拷锟斤拷锟斤拷扫锟斤拷锟竭讹拷锟斤拷锟斤拷锟侥边斤拷锟斤拷锟斤拷小锟侥边斤拷
     for(int j = 0; j < width; j++){
         bool foundGreen = false;
         for(int i = 0; i < height; i++){
@@ -245,7 +245,7 @@ IplImage* ImageProcessor::deleteNoise(const IplImage*image){//输入3通道32位浮点H
         else
             j++;
     }//while
-    //更新colFlag
+    //锟斤拷锟斤拷colFlag
     for(int j = 0; j < width; j++){
         for(int i = 0; i < height; i++){
             float h = noise_data[i*width*3+j*3+0];
@@ -286,7 +286,6 @@ IplImage* ImageProcessor::deleteNoise(const IplImage*image){//输入3通道32位浮点H
 
     return noise;
 }
-
 IplImage* ImageProcessor::extractColorBlocks(const IplImage* hsv_img)
 {
     IplImage* cb = cvCreateImage(cvGetSize(hsv_img),IPL_DEPTH_8U,1);

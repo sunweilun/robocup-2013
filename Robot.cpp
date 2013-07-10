@@ -22,6 +22,7 @@ void Robot::radarOn()
     radar = true;
     cvNamedWindow(RADAR_WND_NAME);
     cvMoveWindow(RADAR_WND_NAME,0,0);
+    updateRadar();
 }
 
 void Robot::radarOff()
@@ -57,15 +58,14 @@ void Robot::turnRight(float angle)
 
 void Robot::drawMap() {
     printf("drawmap in!\n");
-/*
-<<<<<<< HEAD
    //getImage();
 
     for(int i=0;i<12;i++)
     {
-        printf("for in!\n");
         getImage();
+        printf("draw start\n");
         worldMap.updateMap(image);
+        printf("draw finish\n");
         turnRight(30);
     }
 
@@ -78,23 +78,6 @@ void Robot::drawMap() {
     //getImage();
     worldMap.updateMap(image);
     worldMap.saveMap("result.png");
-=======
-*/
-    /*for(int i=0;i<12;i++)
-    {
-        printf("for in!\n");
-        getImage();
-        turnRight(30);
-        worldMap.updateMap(image);
-    }*/
-    getImage();
-    worldMap.updateMap(image);
-    turnRight(180);
-    getImage();
-    worldMap.updateMap(image);
-    moveForward(200,30);
-    getImage();
-    worldMap.updateMap(image);
 }
 
 void Robot::getImage()
@@ -124,11 +107,14 @@ void Robot::updateRadar()
     if(!radar)
         return;
     IplImage* wMap = worldMap.getMap();
+    int x = this->x+(MAP_LEN>>1);
+    int y = (MAP_LEN>>1)+1-this->y;
     cvCircle(wMap,cvPoint(x,y),ROBOT_RADIUS,CV_RGB(0,0,0),-1);
-    cvLine(wMap,cvPoint(x,y),cvPoint(x+ROBOT_RADIUS*sin(ori),y+ROBOT_RADIUS*cos(ori)),CV_RGB(0,255,255),3);
+    cvLine(wMap,cvPoint(x,y),cvPoint(x+ROBOT_RADIUS*sin(ori),y-ROBOT_RADIUS*cos(ori)),CV_RGB(0,255,255),3);
     if(ballLocated)
         cvCircle(wMap,cvPoint(x,y),BALL_RADIUS,CV_RGB(255,0,0),-1);
     cvShowImage(RADAR_WND_NAME,wMap);
+    cvWaitKey(100);
     cvReleaseImage(&wMap);
 }
 
@@ -136,6 +122,7 @@ bool Robot::locateBall()
 {
     if(!image)
         return false;
+    ip.setBound(BALL_BOUND);
     std::vector<cv::Point3f> circles = ip.extractCircles(image);
     if(circles.size()<=0)
     {
