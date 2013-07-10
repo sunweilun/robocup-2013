@@ -74,7 +74,7 @@ cv::Point2f WorldMap::coord_world2robot(const cv::Point2f& wCoord)
 bool WorldMap::legal(const IplImage *img,int x,int y)
 {
     bool xLegal = (x>=0 && x<img->width);
-    bool yLegal = (y>=0 && y<img->height);
+    bool yLegal = (y>=INVAlID_CAM_HEIGHT && y<img->height);
     return xLegal && yLegal && img->imageData[y*img->width+x]!=0;
 }
 

@@ -1,3 +1,9 @@
+//#pragma once
+
+#ifndef GETPHOTO_H
+#define GETPHOTO_H
+
+
 #include "motor/include/net.h"
 #include <pthread.h>
 
@@ -9,25 +15,23 @@ extern "C" {
 #define MAX_NET_WIDTH	320
 #define MAX_NET_HEIGHT	240
 
-#ifndef GETPHOTO_H
-#define GETPHOTO_H
 
 static pthread_mutex_t ca_mutex;
-struct net nst[2];
-int photoCnt = 0;
-int size = 0;
-unsigned char raw_buff1[MAX_MJPEG_SIZE];
-unsigned char* raw_buff;
+static struct net nst[2];
+static int photoCnt = 0;
+static int size = 0;
+static unsigned char raw_buff1[MAX_MJPEG_SIZE];
+static unsigned char* raw_buff;
 
-void* myInit(void* arg);
+static void* myInit(void* arg);
 
-void ptInit() {
+static void ptInit() {
         pthread_t pt;
         pthread_create(&pt, NULL, myInit, NULL);
         usleep(2000);
 }
 
-void* myInit(void* arg) {
+static void* myInit(void* arg) {
 	pthread_mutex_init(&ca_mutex, NULL);
 	raw_buff = raw_buff1;
 	int port1 = 8000, port2 = 8001;
@@ -84,12 +88,12 @@ int getInfo(int num) {
 }
 */
 
-void ptEnd() {
+static void ptEnd() {
     net_close(&(nst[0]));
 	net_close(&(nst[1]));
 }
 
-void getPhoto() {
+static void getPhoto() {
     //printf("1\n");
     usleep(2000);
 	int gsize = 0;
@@ -116,7 +120,7 @@ void getPhoto() {
 	}
 
 	char dataName[300];
-	sprintf(dataName, "%d.dat", photoCnt);
+	sprintf(dataName, "./data/%d.dat", photoCnt);
 	photoCnt++;
 	FILE* p = fopen(dataName, "w");
 	fprintf(p, "%d %d\n", 320, 240);

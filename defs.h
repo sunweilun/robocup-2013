@@ -1,6 +1,9 @@
 //#define DEBUG_MAP
-#define DATA_PATH "/home/csai123/桌面/RoboCup/"
-#define CAM_PARMS_PATH "/home/csai123/robocup-test/calib/left-right"
+#define DATA_PATH "/home/csai123/桌面/RoboCup/data/"
+//!!!#define CAM_PARMS_PATH "/home/csai123/robocup-test/calib/left-right"
+#define CAM_PARMS_PATH "/home/csai123/桌面/RoboCup/cam_parms"
+
+#define INVAlID_CAM_HEIGHT 50
 
 #define MAP_LEN 512
 
