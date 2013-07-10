@@ -65,8 +65,9 @@ cv::Point2f WorldMap::coord_robot2world(const cv::Point2f& rCoord)
 cv::Point2f WorldMap::coord_world2robot(const cv::Point2f& wCoord)
 {
     cv::Point2f rCoord;
-    rCoord.x = -robot->x+wCoord.x*cos(robot->ori)-wCoord.y*sin(robot->ori);
-    rCoord.y = -robot->y+wCoord.x*sin(robot->ori)+wCoord.y*cos(robot->ori);
+    cv::Point2f temp(wCoord.x-robot->x,wCoord.y-robot->y);
+    rCoord.x = temp.x*cos(robot->ori)-temp.y*sin(robot->ori);
+    rCoord.y = temp.x*sin(robot->ori)+temp.y*cos(robot->ori);
     return rCoord;
 }
 
@@ -102,17 +103,23 @@ IplImage* WorldMap::getGate(const IplImage* hsv_img){
     ip.setBound(BLUE_BOUND);
     IplImage* blue = cvCreateImage(cvGetSize(hsv_img), IPL_DEPTH_32F, 3);
     bool hasGate = ip.getOnlyBlue(hsv_img, blue);
- //        cvNamedWindow("onlyblue",  CV_WINDOW_AUTOSIZE);
-  //      cvShowImage("onlyblue", blue);
 
     if(!hasGate){
-        IplImage* black = cvCreateImage(cvGetSize(hsv_img), IPL_DEPTH_8U, 1);
-        cvReleaseImage(&blue);
-        return black;
+        IplImage* gate = cvCreateImage(cvGetSize(hsv_img), IPL_DEPTH_8U, 1);
+        uchar* gate_data =  (uchar*)gate->imageData;
+        for(int i = 0; i <  gate->width*gate->height; i++){
+                gate_data[i] = 0;
+        }
+//        cvReleaseImage(&blue);
+ //       cvNamedWindow("onlyblue",  CV_WINDOW_AUTOSIZE);
+        cvShowImage("onlyblue", gate);
+        return gate;
     }
     else{
         int* bound = ip.scanUp(blue);
         IplImage* gate = ip.getBound(bound);
+        cvNamedWindow("onlyblue",  CV_WINDOW_AUTOSIZE);
+        cvShowImage("onlyblue", gate);
         cvReleaseImage(&blue);
   //       cvNamedWindow("gate",  CV_WINDOW_AUTOSIZE);
    //     cvShowImage("gate", gate);
@@ -125,8 +132,8 @@ void WorldMap::updateMap(const IplImage *img)
     IplImage* hsv_img = get_hsv(img);
     //IplImage *lines = getLines(hsv_img);
     //sk add
-    IplImage* lines = getField(hsv_img);
     IplImage* gate = getGate(hsv_img);
+    IplImage* lines = getField(hsv_img);
 
     for(int i=0;i<MAP_LEN*MAP_LEN;i++)
     {

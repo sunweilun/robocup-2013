@@ -36,14 +36,16 @@ void* myInit(void* arg) {
 
     while (true) {
         //int size = 0;
-        printf("3");
+        //printf("3\n");
+        usleep(2000);
         pthread_mutex_lock(&ca_mutex);
         if ((size = net_recv(raw_buff, MAX_MJPEG_SIZE, &(nst[1]))) <= 0) {
             fprintf(stderr, "net_recv error\n");
             return (void*)0;
         }
         pthread_mutex_unlock(&ca_mutex);
-        printf("4");
+        //printf("4\n");
+        usleep(2000);
     }
 }
 
@@ -88,7 +90,8 @@ void ptEnd() {
 }
 
 void getPhoto() {
-    printf("1\n");
+    //printf("1\n");
+    usleep(2000);
 	int gsize = 0;
 	unsigned char tmpbuf[MAX_MJPEG_SIZE];
 
@@ -96,7 +99,8 @@ void getPhoto() {
 	memcpy(tmpbuf, raw_buff, MAX_MJPEG_SIZE);
 	gsize = size;
 	pthread_mutex_unlock(&ca_mutex);
-    printf("2\n");
+    //printf("2\n");
+	usleep(2000);
 	struct jpeg_decompress_struct* jpeg_decompressor = newDecompressor ( MAX_NET_WIDTH );
 	long rgbbuffersize = MAX_NET_WIDTH * MAX_NET_HEIGHT * 3;
 	unsigned char rgbbuffer[rgbbuffersize];

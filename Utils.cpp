@@ -92,7 +92,7 @@ std::vector<cv::Point3f> ball_detection(const IplImage* img, const cv::Point2f& 
 		retp.z=cvRound(p[2]);//radius
 		ret.push_back(retp);
 	}
-	cvReleaseData(&circles);
+	//cvReleaseData(&circles);
 	cvReleaseImage(&image);
 	cvReleaseImage(&image_Gray);
 	cvReleaseMemStorage(&storage);

@@ -25,6 +25,11 @@ void Robot::radarOn()
     updateRadar();
 }
 
+cv::Point2f Robot::world2image(const cv::Point2f& coord)
+{
+    return cv::Point2f(coord.x+(MAP_LEN>>1),(MAP_LEN>>1)+1-coord.y);
+}
+
 void Robot::radarOff()
 {
     radar = false;
@@ -60,6 +65,16 @@ void Robot::drawMap() {
     printf("drawmap in!\n");
    //getImage();
 
+    for(int i=0;i<12;i++)
+    {
+        getImage();
+        printf("draw start\n");
+        worldMap.updateMap(image);
+        locateOwnGate();
+        printf("draw finish\n");
+        turnRight(30);
+    }
+    moveForward(200, SPEED_LIMIT);
     for(int i=0;i<12;i++)
     {
         getImage();
@@ -109,11 +124,16 @@ void Robot::updateRadar()
     IplImage* wMap = worldMap.getMap();
     int x = this->x+(MAP_LEN>>1);
     int y = (MAP_LEN>>1)+1-this->y;
+    cv::Point2f ownGoal_coord = world2image(this->ownGoal_coord);
+    cv::Point2f ball_coord = world2image(this->ball_coord);
     cvCircle(wMap,cvPoint(x,y),ROBOT_RADIUS,CV_RGB(0,0,0),-1);
-    cvLine(wMap,cvPoint(x,y),cvPoint(x+ROBOT_RADIUS*sin(ori),y-ROBOT_RADIUS*cos(ori)),CV_RGB(0,255,255),3);
+    cvLine(wMap,cvPoint(x,y),cvPoint(x+ROBOT_RADIUS*sin(ori),y-ROBOT_RADIUS*cos(ori)),CV_RGB(255,255,0),3);
     if(ballLocated)
-        cvCircle(wMap,cvPoint(x,y),BALL_RADIUS,CV_RGB(255,0,0),-1);
+        cvCircle(wMap,cvPoint(ball_coord.x,ball_coord.y),BALL_RADIUS,CV_RGB(255,0,0),-1);
+    if(ownGoalLocated)
+        cvCircle(wMap,cvPoint(ownGoal_coord.x,ownGoal_coord.y),5,CV_RGB(0,0,255),-1);
     cvShowImage(RADAR_WND_NAME,wMap);
+    cvSaveImage("Radar.png",wMap);
     cvWaitKey(100);
     cvReleaseImage(&wMap);
 }
@@ -150,4 +170,34 @@ Robot::~Robot()
 {
     if(image)
         cvReleaseImage(&image);
+}
+bool Robot::locateOwnGate(){
+    IplImage* wMap = worldMap.getMap();
+    uchar* wMap_data = (uchar*)wMap->imageData;
+    float center_x = 0, center_y = 0;
+    float n = 0;
+    for(int i = 0; i < MAP_LEN; i++){
+        for(int j = 0; j < MAP_LEN; j++){
+            int b = wMap_data[i*MAP_LEN*3+j*3+0];
+            int g = wMap_data[i*MAP_LEN*3+j*3+1];
+            int r = wMap_data[i*MAP_LEN*3+j*3+2];
+            if(b == 255 && g==0 && r==0){
+                center_x += j;
+                center_y += i;
+                n++;
+            }
+        }
+    }
+    cvReleaseImage(&wMap);
+    if(n < 10){
+        return false;
+    }
+    else{
+        center_x = center_x/n;
+        center_y = center_y/n;
+        ownGoal_coord.x = center_x - (MAP_LEN>>1);
+        ownGoal_coord.y = (MAP_LEN>>1)+1-center_y;
+        ownGoalLocated = true;
+        return true;
+    }
 }
