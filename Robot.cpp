@@ -14,7 +14,7 @@ Robot::Robot()
     ownGoalLocated = false;
     oppGoalLocated = false;
     radar = false;
-    setCoord(0,0,0);
+    setCoord(-100,0,0);
 }
 
 void Robot::radarOn()
@@ -62,10 +62,6 @@ void Robot::turnRight(float angle)
 }
 
 void Robot::drawMap() {
-    setCoord(0,-100,0);
-   getImage();
-
-    /*
     for(int i=0;i<12;i++)
     {
         getImage();
@@ -84,7 +80,6 @@ void Robot::drawMap() {
         printf("draw finish\n");
         turnRight(30);
     }
-    */
 
     //getImage();
     //worldMap.updateMap(image);
@@ -117,6 +112,25 @@ void Robot::moveForward(float dist,float max_speed)
     y += dist*cos(ori);
     goWithDistance(dist,max_speed);
     updateRadar();
+}
+
+void Robot::moveTo(const cv::Point2f& wCoord,float max_speed)
+{
+    cv::Point2f robotPosition(x,y);
+    cv::Point2f delta = wCoord - robotPosition;
+    float delta_len = sqrt(pow(delta.x,2)+pow(delta.y,2));
+    cv::Point2f new_dir = delta*(1/delta_len);
+    cv::Point2f dir(sin(ori),cos(ori));
+    float cross = dir.x*new_dir.y-dir.y*new_dir.x;
+
+    float dot = new_dir.dot(dir);
+    dot = dot>1?1:(dot<-1?-1:dot);
+    float angle = acos(dot);
+    if(cross<0)
+        turnRight(angle*180/M_PI);
+    else
+        turnLeft(angle*180/M_PI);
+    moveForward(delta_len,max_speed);
 }
 
 void Robot::updateRadar()

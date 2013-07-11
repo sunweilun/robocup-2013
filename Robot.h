@@ -28,6 +28,7 @@ public:
     void turnLeft(float angle); // angle in degrees
     void turnRight(float angle); // angle in degrees
     void moveForward(float dist,float max_speed);
+    void moveTo(const cv::Point2f& wCoord,float max_speed);
     void drawMap(); // excutes predefined movement to draw the map
     void findBall(); // rotate until the target ball is located
     ~Robot();
