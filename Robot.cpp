@@ -151,7 +151,10 @@ void Robot::shoot()
     if(hidden)
     {
         cv::Point2f turningPoint;
-        moveTo(turningPoint,30);
+        if(getTurningPoint(robotPosition,ball_coord,targetPosition,turningPoint,radius))
+        {
+            moveTo(turningPoint,30);
+        }
     }
     moveTo(shootPrepPosition,30);
     moveTo(targetPosition,50);
