@@ -20,6 +20,7 @@ private:
     bool locateBall(); // locate ball_coord according to *image
     bool locateOwnGate();
     void updateRadar();
+    std::vector<cv::Point2f> shootRoute;
 public:
     Robot();
     void radarOn();

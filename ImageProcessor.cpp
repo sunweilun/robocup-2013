@@ -310,6 +310,10 @@ IplImage* ImageProcessor::extractColorBlocks(const IplImage* hsv_img)
 std::vector<cv::Point3f> ImageProcessor::extractCircles(const IplImage* image)
 {
     vector<cv::Point3f> circle_vct;
+
+    IplImage* cpyImage = cvCreateImage(cvGetSize(image), IPL_DEPTH_8U, 3);
+    memcpy(cpyImage->imageData, image->imageData, 3*image->width*image->height);
+
     IplImage* gray = cvCreateImage(cvGetSize(image), IPL_DEPTH_8U, 1);
     cvCvtColor(image, gray, CV_BGR2GRAY);
     cvSmooth(gray, gray, CV_GAUSSIAN, 3, 3);
@@ -317,7 +321,8 @@ std::vector<cv::Point3f> ImageProcessor::extractCircles(const IplImage* image)
     double minCircleGap = gray->height/10;
     CvSeq* seqCircles = cvHoughCircles(gray, storage, CV_HOUGH_GRADIENT, 2, minCircleGap, 200, 50, 10, 150);
     int circleNum = seqCircles->total;
-
+    bool foundBall = false;
+    int xx = 0, yy = 0, rr = 0;
     if(circleNum > 0){
         vector<int> balls;
         IplImage* image_hsv = cvCreateImage(cvGetSize(image),IPL_DEPTH_32F,3);
@@ -351,6 +356,7 @@ std::vector<cv::Point3f> ImageProcessor::extractCircles(const IplImage* image)
         }//for c
         //cout << "ball.size: " << balls.size() << endl;
         if(balls.size() > 0){
+            foundBall =  true;
             int res_c = -1;
             int res_r = 0, res_x = 0, res_y = 0;
             for(int i = 0; i < balls.size(); i++){
@@ -365,18 +371,22 @@ std::vector<cv::Point3f> ImageProcessor::extractCircles(const IplImage* image)
                 }
             }
             float* pp = (float*)cvGetSeqElem(seqCircles, res_c);
-            int xx = cvRound(pp[0]), yy = cvRound(pp[1]), rr = cvRound(pp[2]);
+            xx = cvRound(pp[0]); yy = cvRound(pp[1]); rr = cvRound(pp[2]);
             circle_vct.push_back(cv::Point3f(xx,yy,rr));
-            #if BALL_DEBUG
-            cvCircle(image, cvPoint(xx, yy), rr, CV_RGB(255, 255, 0), 2);
-            cvNamedWindow("ball_detect", CV_WINDOW_AUTOSIZE);
-            cvShowImage("ball_detect", image);
-            #endif
         }//if balls.size()
         cvReleaseImage(&image_hsv);
     }
     cvReleaseMemStorage(&storage);
     cvReleaseImage(&gray);
-
+    #if BALL_DEBUG
+    if(foundBall){
+        cvCircle(cpyImage, cvPoint(xx, yy), rr, CV_RGB(255, 255, 0), 2);
+    }
+    cvNamedWindow("ball_detect", CV_WINDOW_AUTOSIZE);
+    cvMoveWindow("ball_detect", 512, 0);
+    cvShowImage("ball_detect", cpyImage);
+    cvWaitKey(100);
+    cvReleaseImage(&cpyImage);
+    #endif
     return circle_vct;
 }

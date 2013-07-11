@@ -1,7 +1,8 @@
 //#define DEBUG_MAP
 
-#define DELTA_RADIUS 10
-#define SHOOT_PREP_DIST 20
+#define DELTA_RADIUS 20
+#define SHOOT_PREP_DIST 60
+#define TO_GOAL_DIST 30
 
 #define DATA_PATH "/home/csai123/桌面/RoboCup/data/"
 //!!!#define CAM_PARMS_PATH "/home/csai123/robocup-test/calib/left-right"

@@ -91,6 +91,7 @@ void goWithDistance(int dis, int spd) {
 //dis is in cm; spd <= SPEED_LIMIT && spd mod 5 = 0
     if (spd > SPEED_LIMIT)
         return;
+    int ori = (dis >= 0) ? 1 : -1;
     if (spd % 5 > 0)
         spd -= spd % 5;
     int fuldis = 0;
@@ -99,12 +100,12 @@ void goWithDistance(int dis, int spd) {
     fuldis = fuldis << 1;
     if (dis >= fuldis) {
         for (int i = 5; i <= spd; i = i + 5) {
-            sendAA(i, i, 0);
+            sendAA(i * ori, i * ori, 0);
             usleep(200000);
         }
         usleep(1000000 * (dis - fuldis) / spd);
         for (int i = spd; i >= 0; i = i - 5) {
-            sendAA(i, i, 0);
+            sendAA(i * ori, i * ori, 0);
             usleep(200000);
         }
     }
@@ -112,7 +113,7 @@ void goWithDistance(int dis, int spd) {
         if (dis >= 6)
             goWithDistance(dis, spd - 5);
         else {
-            sendAA(5, 5, 0);
+            sendAA(5 * ori, 5 * ori, 0);
             usleep(1000000 * dis / 5);
             sendAA(0, 0, 0);
             return;

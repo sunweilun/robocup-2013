@@ -62,16 +62,24 @@ void Robot::turnRight(float angle)
 }
 
 void Robot::drawMap() {
+    printf("in\n");
+    getImage();
+    printf("out\n");
     for(int i=0;i<12;i++)
     {
         getImage();
+        cvNamedWindow("src", CV_WINDOW_AUTOSIZE);
+        cvMoveWindow("src", 512, 512);
+        cvShowImage("src", image);
+        cvWaitKey(100);
+
         printf("draw start\n");
         worldMap.updateMap(image);
         locateOwnGate();
         printf("draw finish\n");
         turnRight(30);
     }
-    moveForward(200, 20);
+    /*moveForward(200, 20);
     for(int i=0;i<12;i++)
     {
         getImage();
@@ -79,7 +87,7 @@ void Robot::drawMap() {
         worldMap.updateMap(image);
         printf("draw finish\n");
         turnRight(30);
-    }
+    }*/
 
     //getImage();
     //worldMap.updateMap(image);
@@ -140,7 +148,7 @@ void Robot::shoot()
     float dist_ball2goal = sqrt(pow(ball2goal.x,2)+pow(ball2goal.y,2));
     cv::Point2f prep2ball = ball2goal*(1/dist_ball2goal)*SHOOT_PREP_DIST;
     cv::Point2f shootPrepPosition = ball_coord - prep2ball;
-    cv::Point2f targetPosition = ball_coord + prep2ball;
+    cv::Point2f targetPosition = ownGoal_coord - prep2ball*(TO_GOAL_DIST/float(SHOOT_PREP_DIST));
     cv::Point2f robotPosition(x,y);
     cv::Point2f robot2prep = shootPrepPosition - robotPosition;
     float dist_robot2prep = sqrt(pow(robot2prep.x,2)+pow(robot2prep.y,2));
@@ -148,16 +156,29 @@ void Robot::shoot()
     dot = dot>1?1:(dot<-1?-1:dot);
     float dist = SHOOT_PREP_DIST*sin(acos(dot));
     bool hidden = dot<0 && dist<radius && dist_robot2prep>SHOOT_PREP_DIST;
+    cv::Point2f turningPoint;
+    bool turn = false;
     if(hidden)
     {
-        cv::Point2f turningPoint;
-        if(getTurningPoint(robotPosition,ball_coord,targetPosition,turningPoint,radius))
-        {
-            moveTo(turningPoint,30);
-        }
+        printf("rp = %f,%f\n",robotPosition.x,robotPosition.y);
+        printf("bp = %f,%f\n",ball_coord.x,ball_coord.y);
+        printf("tp = %f,%f\n",shootPrepPosition.x,shootPrepPosition.y);
+        printf("r = %f\n",radius);
+        turn = getTurningPoint(robotPosition,ball_coord,shootPrepPosition,turningPoint,radius);
+        printf("tp = %f,%f\n",turningPoint.x,turningPoint.y);
     }
+    shootRoute.push_back(robotPosition);
+    if(turn)
+        shootRoute.push_back(turningPoint);
+    shootRoute.push_back(shootPrepPosition);
+    shootRoute.push_back(targetPosition);
+    updateRadar();
+    if(turn)
+        moveTo(turningPoint,30);
     moveTo(shootPrepPosition,30);
     moveTo(targetPosition,50);
+    shootRoute.clear();
+    updateRadar();
 }
 
 void Robot::updateRadar()
@@ -169,6 +190,17 @@ void Robot::updateRadar()
     int y = (MAP_LEN>>1)+1-this->y;
     cv::Point2f ownGoal_coord = world2image(this->ownGoal_coord);
     cv::Point2f ball_coord = world2image(this->ball_coord);
+
+    if(shootRoute.size()>1)
+    {
+        for(int i=0;i<shootRoute.size()-1;i++)
+        {
+            cvLine(wMap,world2image(shootRoute[i]),world2image(shootRoute[i+1]),CV_RGB(255,128,189),3);
+            //printf("coord(%f,%f)\n",shootRoute[i].x,shootRoute[i].y);
+        }
+        //printf("ball(%f,%f)\n",ball_coord.x,ball_coord.y);
+    }
+
     cvCircle(wMap,cvPoint(x,y),ROBOT_RADIUS,CV_RGB(0,0,0),-1);
     cvLine(wMap,cvPoint(x,y),cvPoint(x+ROBOT_RADIUS*sin(ori),y-ROBOT_RADIUS*cos(ori)),CV_RGB(255,255,0),3);
     if(ballLocated)

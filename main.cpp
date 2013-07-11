@@ -13,6 +13,8 @@ int main()
     robot.drawMap();
     robot.findBall();
     robot.shoot();
+    robot.findBall();
+    robot.shoot();
     robot.radarOff();
 #endif
 
