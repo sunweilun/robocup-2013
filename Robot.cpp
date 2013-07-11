@@ -14,7 +14,7 @@ Robot::Robot()
     ownGoalLocated = false;
     oppGoalLocated = false;
     radar = false;
-    setCoord(-100,0,0);
+    setCoord(0,-100,0);
 }
 
 void Robot::radarOn()

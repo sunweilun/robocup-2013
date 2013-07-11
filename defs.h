@@ -39,16 +39,17 @@
 #define BLUE_V_LB 0.89
 #define BLUE_V_UB 1
 
-#define BALL_H_LB 210
-#define BALL_H_UB 253
-#define BALL_S_LB 0.17
-#define BALL_S_UB 0.27
-#define BALL_V_LB 0.1
-#define BALL_V_UB 0.5
+#define BALL_H_LB 235
+#define BALL_H_UB 331
+#define BALL_S_LB 0.18
+#define BALL_S_UB 0.495
+#define BALL_V_LB 0.23
+#define BALL_V_UB 0.58
 
 #define GRASS_BOUND cv::Point2f(GRASS_H_LB,GRASS_H_UB),cv::Point2f(GRASS_S_LB,GRASS_S_UB),cv::Point2f(GRASS_V_LB,GRASS_V_UB)
 #define LINE_BOUND cv::Point2f(LINE_H_LB,LINE_H_UB),cv::Point2f(LINE_S_LB,LINE_S_UB),cv::Point2f(LINE_V_LB,LINE_V_UB)
 #define BALL_BOUND cv::Point2f(BALL_H_LB,BALL_H_UB),cv::Point2f(BALL_S_LB,BALL_S_UB),cv::Point2f(BALL_V_LB,BALL_V_UB)
 #define BLUE_BOUND cv::Point2f(BLUE_H_LB,BLUE_H_UB),cv::Point2f(BLUE_S_LB,BLUE_S_UB),cv::Point2f(BLUE_V_LB,BLUE_V_UB)
+#define BALL_DEBUG 1
 
 #define DEBUG
