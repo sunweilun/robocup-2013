@@ -307,7 +307,7 @@ IplImage* ImageProcessor::extractColorBlocks(const IplImage* hsv_img)
     return cb;
 }
 
-std::vector<cv::Point3f> ImageProcessor::extractCircles(const IplImage* img)
+std::vector<cv::Point3f> ImageProcessor::extractCircles(const IplImage* image)
 {
     vector<cv::Point3f> circle_vct;
     IplImage* gray = cvCreateImage(cvGetSize(image), IPL_DEPTH_8U, 1);
@@ -320,8 +320,9 @@ std::vector<cv::Point3f> ImageProcessor::extractCircles(const IplImage* img)
 
     if(circleNum > 0){
         vector<int> balls;
-
-        IplImage* image_hsv = rgbToHsv(image);
+        IplImage* image_hsv = cvCreateImage(cvGetSize(image),IPL_DEPTH_32F,3);
+        cvConvertScale(image,image_hsv,1/255.0);
+        cvCvtColor(image_hsv,image_hsv,CV_BGR2HSV);
         float* image_hsv_data = (float *)image_hsv->imageData;
 
         for(int c = 0; c < seqCircles->total; c++){

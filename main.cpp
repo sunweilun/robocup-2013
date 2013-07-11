@@ -11,8 +11,12 @@ int main()
     Robot robot;
     robot.radarOn();
     robot.drawMap();
-    //robot.findBall();
-
+    robot.findBall();
+    /*cv::Point2f wCoord(50, 50);
+    robot.moveTo(wCoord, 30);
+    wCoord.x = 100;
+    wCoord.y = 200;
+    robot.moveTo(wCoord, 30);*/
     robot.radarOff();
 #endif
 
