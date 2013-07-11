@@ -110,16 +110,16 @@ IplImage* WorldMap::getGate(const IplImage* hsv_img){
         for(int i = 0; i <  gate->width*gate->height; i++){
                 gate_data[i] = 0;
         }
-//        cvReleaseImage(&blue);
+        cvReleaseImage(&blue);
  //       cvNamedWindow("onlyblue",  CV_WINDOW_AUTOSIZE);
-        cvShowImage("onlyblue", gate);
+ //       cvShowImage("onlyblue", gate);
         return gate;
     }
     else{
         int* bound = ip.scanUp(blue);
         IplImage* gate = ip.getBound(bound);
-        cvNamedWindow("onlyblue",  CV_WINDOW_AUTOSIZE);
-        cvShowImage("onlyblue", gate);
+//        cvNamedWindow("onlyblue",  CV_WINDOW_AUTOSIZE);
+//        cvShowImage("onlyblue", gate);
         cvReleaseImage(&blue);
   //       cvNamedWindow("gate",  CV_WINDOW_AUTOSIZE);
    //     cvShowImage("gate", gate);
