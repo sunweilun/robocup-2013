@@ -11,8 +11,8 @@ int main()
     Robot robot;
     robot.radarOn();
     robot.drawMap();
-    //robot.findBall();
-
+    robot.findBall();
+    robot.shoot();
     robot.radarOff();
 #endif
 

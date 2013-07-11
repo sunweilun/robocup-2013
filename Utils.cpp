@@ -1,5 +1,67 @@
 #include "Utils.h"
 
+float arctan(float x,float y)//range=(-pi/2,3pi/2)
+{
+	float angle=asin(y/sqrt(x*x+y*y));
+	if(x<0)
+		angle=M_PI-angle;
+	return angle;
+}
+
+bool getTurningPoint(const cv::Point2f& robot,const cv::Point2f& center,const cv::Point& target,cv::Point2f &turningPoint,float radius)
+{
+    float xB=center.x-robot.x;
+    float yB=center.y-robot.y;
+    float xS=target.x-robot.x;
+    float yS=target.y-robot.y;
+    float r=radius;
+    float xT=0;
+    float yT=0;
+		float thetaB;
+		float thetaBs;
+		float thetaT;
+		float thetaTs;
+		float divider;
+    float t;
+
+	float product=xB*yS-yB*xS;
+	if(product<=0)
+	{
+		thetaB=arctan(xB,yB);
+		thetaBs=arctan(xB-xS,yS-yB);
+		thetaT=thetaB-asin(r/sqrt(xB*xB+yB*yB));
+		thetaTs=thetaBs-asin(r/sqrt((xB-xS)*(xB-xS)+(yB-yS)*(yB-yS)));
+		divider=sin(thetaT+thetaTs);
+		//if(divider!=0)
+		{
+			t=(xS*sin(thetaTs)+yS*cos(thetaTs))/divider;
+		}
+		xT=t*cos(thetaT);
+		yT=t*sin(thetaT);
+	}
+	else
+	{
+		xB=-xB;
+		xS=-xS;
+		thetaB=arctan(xB,yB);
+		thetaBs=arctan(xB-xS,yS-yB);
+		thetaT=thetaB-asin(r/sqrt(xB*xB+yB*yB));
+		thetaTs=thetaBs-asin(r/sqrt((xB-xS)*(xB-xS)+(yB-yS)*(yB-yS)));
+		divider=sin(thetaT+thetaTs);
+		//if(divider!=0)
+		{
+			t=(xS*sin(thetaTs)+yS*cos(thetaTs))/divider;
+		}
+		xT=t*cos(thetaT);
+		yT=t*sin(thetaT);
+		xT=-xT;
+	}
+
+	cv::Point2f ret(xT+robot.x,yT+robot.y);
+	turningPoint=ret;
+	return true;
+}
+
 IplImage *loadDatImage(char *fn)
 {
     IplImage *image;
@@ -52,7 +114,7 @@ std::vector<cv::Point3f> ball_detection(const IplImage* img, const cv::Point2f& 
 		{
 			if(y<img->height/2 || y>img->height/2+img->height)
 				continue;
-			int x0=sqrt(cvRound(p[2])*cvRound(p[2])-(double)((cvRound(p[1])-y)*(cvRound(p[1])-y)));
+			int x0=sqrt(cvRound(p[2])*cvRound(p[2])-(float)((cvRound(p[1])-y)*(cvRound(p[1])-y)));
 			for(int x=cvRound(p[0])-x0;x<cvRound(p[0])+x0;++x)
 			{
 				if(x<img->width/2 || x>img->width/2+img->width)
