@@ -133,6 +133,30 @@ void Robot::moveTo(const cv::Point2f& wCoord,float max_speed)
     moveForward(delta_len,max_speed);
 }
 
+void Robot::shoot()
+{
+    float radius = BALL_RADIUS + ROBOT_RADIUS + DELTA_RADIUS;
+    cv::Point2f ball2goal = ownGoal_coord - ball_coord;
+    float dist_ball2goal = sqrt(pow(ball2goal.x,2)+pow(ball2goal.y,2));
+    cv::Point2f prep2ball = ball2goal*(1/dist_ball2goal)*SHOOT_PREP_DIST;
+    cv::Point2f shootPrepPosition = ball_coord - prep2ball;
+    cv::Point2f targetPosition = ball_coord + prep2ball;
+    cv::Point2f robotPosition(x,y);
+    cv::Point2f robot2prep = shootPrepPosition - robotPosition;
+    float dist_robot2prep = sqrt(pow(robot2prep.x,2)+pow(robot2prep.y,2));
+    float dot = robot2prep.dot(prep2ball)/dist_robot2prep/SHOOT_PREP_DIST;
+    dot = dot>1?1:(dot<-1?-1:dot);
+    float dist = SHOOT_PREP_DIST*sin(acos(dot));
+    bool hidden = dot<0 && dist<radius && dist_robot2prep>SHOOT_PREP_DIST;
+    if(hidden)
+    {
+        cv::Point2f turningPoint;
+        moveTo(turningPoint,30);
+    }
+    moveTo(shootPrepPosition,30);
+    moveTo(targetPosition,50);
+}
+
 void Robot::updateRadar()
 {
     if(!radar)
