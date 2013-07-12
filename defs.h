@@ -1,6 +1,6 @@
 //#define DEBUG_MAP
 
-#define DELTA_RADIUS 20
+#define DELTA_RADIUS 10
 #define SHOOT_PREP_DIST 60
 #define TO_GOAL_DIST 30
 
