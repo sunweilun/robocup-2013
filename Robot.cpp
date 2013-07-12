@@ -223,10 +223,17 @@ bool Robot::locateBall()
     {
         return false;
     }
-    ballLocated = true;
+
     cv::Point2f rCoord;
     rCoord = worldMap.coord_screen2robot(cv::Point2f(circles[0].x,circles[0].y+circles[0].z));
     ball_coord = worldMap.coord_robot2world(rCoord);
+    CvRect bbox = worldMap.getMap_bbox();
+    cv::Point2f ball_coord_img = world2image(ball_coord);
+    if(ball_coord_img.x>=bbox.x && ball_coord_img.x<=bbox.x+bbox.width && ball_coord_img.y>=bbox.y && ball_coord_img.y<=bbox.y+bbox.height)
+    {
+        return false;
+    }
+    ballLocated = true;
     updateRadar();
     return true;
 }

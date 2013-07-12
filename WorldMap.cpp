@@ -43,6 +43,28 @@ cv::Point2f WorldMap::coord_robot2screen(const cv::Point2f& rCoord)
     return sCoord;
 }
 
+CvRect WorldMap::getMap_bbox()
+{
+    if(!wMap)
+        return cvRect(0,0,0,0);
+    int xmin = MAP_LEN,xmax = -1,ymin = MAP_LEN,ymax = -1;
+    for(int x=0;x<wMap->width;x++)
+    {
+        for(int y=0;y<wMap->height;y++)
+        {
+            int idx = 3*(y*wMap->width+x);
+            if(wMap->imageData[idx]==255 && wMap->imageData[idx+1]==255 && wMap->imageData[idx+2]==255)
+            {
+                xmin = x<xmin?x:xmin;
+                xmax = x>xmax?x:xmax;
+                ymin = y<ymin?y:ymin;
+                ymax = y>ymax?y:ymax;
+            }
+        }
+    }
+    return cvRect(xmin,ymin,xmax-xmin,ymax-ymin);
+}
+
 cv::Point2f WorldMap::coord_screen2robot(const cv::Point2f& sCoord)
 {
     cv::Point2f rCoord;

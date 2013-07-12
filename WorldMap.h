@@ -30,6 +30,7 @@ public:
     void saveMap(const char* fn);
     WorldMap();
     ~WorldMap();
+    CvRect getMap_bbox();
     //sk add
     IplImage *getField(const IplImage*img);
     IplImage *getGate(const IplImage*img);
