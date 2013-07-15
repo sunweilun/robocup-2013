@@ -158,6 +158,6 @@ void calib()
     printf("np:%d\n", np);
 
     CalTransMat(Tran_Mat, np, sc, rc);
-    printf("The Translated Matrix:");
+    printf("Transform Matrix:");
     PrintMat(Tran_Mat);
 }

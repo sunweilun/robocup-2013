@@ -49,7 +49,7 @@ void motor_init()
 
 double getRotateTime (int v, double arc)
 {
-    double dis = 31.5 / 2;// rotate weel radius
+    double dis = 31.5 / 2;// rotate wheel radius
     double t = (arc-ARC_DELAY) * dis / v;
     return t * 1000000;
 }
