@@ -270,6 +270,42 @@ bool Robot::locateBall()
     return true;
 }
 
+std::vector<cv::Point2f> Robot::findMulBall()
+{
+    std::vector<cv::Point2f> ans;
+    if (!image)
+        return false;
+    while (true) {
+        ip.setBound(BALL_BOUND);
+        std::vector<cv::Point3f> circles = ip.extractMulCircles(image);
+        if (circles.size() <= 0)
+        {
+            turnRight(FIND_BALL_ANGLE);
+            getImage();
+            continue;
+        }
+        for (int i = 0; i != circles.size(); ++i) {
+            cv::Point2f rCoord;
+            rCoord = worldMap.coord_screen2robot(cv::Point2f(circles[i].x,circles[i].y+circles[i].z));
+            ball_coord = worldMap.coord_robot2world(rCoord);
+            CvRect bbox = worldMap.getMap_bbox();
+            cv::Point2f ball_coord_img = world2image(ball_coord);
+            if(ball_coord_img.x>=bbox.x && ball_coord_img.x<=bbox.x+bbox.width && ball_coord_img.y>=bbox.y && ball_coord_img.y<=bbox.y+bbox.height)
+            {
+                continue;
+                //return false;
+            }
+            ans.push_back(ball_coord);
+        }
+        if (ans.size() > 1)
+            break;
+        turnRight(FIND_BALL_ANGLE);
+        getImage();
+    }
+
+    return ans;
+}
+
 void Robot::findBall()
 {
     getImage();
