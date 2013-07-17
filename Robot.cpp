@@ -154,11 +154,16 @@ void Robot::moveTo(const cv::Point2f& wCoord,float max_speed)
 {
     cv::Point2f robotPosition(x,y);
     cv::Point2f delta = wCoord - robotPosition;
-    float delta_len = sqrt(pow(delta.x,2)+pow(delta.y,2));
+    float delta_len = length(delta);
     cv::Point2f new_dir = delta*(1/delta_len);
+    rotateTo(new_dir);
+    moveForward(delta_len,max_speed);
+}
+
+void Robot::rotateTo(const cv::Point2f &new_dir)
+{
     cv::Point2f dir(sin(ori),cos(ori));
     float cross = dir.x*new_dir.y-dir.y*new_dir.x;
-
     float dot = new_dir.dot(dir);
     dot = dot>1?1:(dot<-1?-1:dot);
     float angle = acos(dot);
@@ -166,11 +171,48 @@ void Robot::moveTo(const cv::Point2f& wCoord,float max_speed)
         turnRight(angle*180/M_PI);
     else
         turnLeft(angle*180/M_PI);
-    moveForward(delta_len,max_speed);
+}
+
+void Robot::keepGoal()
+{
+    bool abort = false;
+    cv::Point2f keeper_center = ownGoal_coord + ownGoal_frontDir*KEEPER_DIST2GOAL;
+    cv::Point2f keeper_dir(ownGoal_frontDir.y,-ownGoal_frontDir.x);
+    moveTo(keeper_center,30);
+    rotateTo(keeper_dir);
+    while(!abort)
+    {
+        cv::Point2f ballVelocity,ballPosition;
+        getBallInfo(ballVelocity,ballPosition);
+        if(length(ballVelocity)<MIN_BALL_SPEED_TO_KEEP || ballVelocity.dot(ownGoal_frontDir)/length(ballVelocity)>-0.1)
+            continue;
+        float ball2goal_time = getTime(ballPosition,ballVelocity,ownGoal_coord,keeper_dir);
+        float ball2keepline_time = getTime(ballPosition,ballVelocity,keeper_center,keeper_dir);
+        cv::Point2f crossPoint = ballPosition + ball2goal_time*ballVelocity;
+        if(ball2keepline_time<0 || length(crossPoint-ownGoal_coord)<ownGoal_width/2)
+            continue;
+        struct timespec ts,te;
+        clock_gettime(CLOCK_REALTIME,&ts);
+        float fwd_dist = ((ballPosition + ballVelocity*ball2keepline_time)-ownGoal_coord).dot(keeper_dir);
+        moveForward(fwd_dist,50);
+        clock_gettime(CLOCK_REALTIME,&te);
+        float move_cost = float(te.tv_nsec-ts.tv_nsec)/(1e9);
+        float sleepTime = EXTRA_WAIT_TIME+ball2keepline_time-move_cost;
+        if(sleepTime>0)
+            uleep(sleepTime*1e6);
+        moveForward(-fwd_dist,50);
+    }
+}
+
+bool Robot::getBallInfo(cv::Point2f &ballVelocity,cv::Point2f &ballPosition)
+{
+    // to be done by zc
+    return true;
 }
 
 void Robot::shoot()
 {
+    findBall();
     float radius = BALL_RADIUS + ROBOT_RADIUS + DELTA_RADIUS;
     cv::Point2f ball2goal = ownGoal_coord - ball_coord;
     float dist_ball2goal = sqrt(pow(ball2goal.x,2)+pow(ball2goal.y,2));
