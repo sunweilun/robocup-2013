@@ -63,11 +63,12 @@ void Robot::turnRight(float angle)
     updateRadar();
 }
 
-void Robot::drawMap() {
+void Robot::drawMap()
+{
     printf("in\n");
     getImage();
     printf("out\n");
-    for(int i=0;i<12;i++)
+    for(int i=0; i<12; i++)
     {
         getImage();
         cvNamedWindow("src", CV_WINDOW_AUTOSIZE);
@@ -90,6 +91,16 @@ void Robot::drawMap() {
         printf("draw finish\n");
         turnRight(30);
     }*/
+
+    //getImage();
+    //worldMap.updateMap(image);
+    //turnRight(180);
+    //getImage();
+    //worldMap.updateMap(image);
+    //moveForward(200,30);
+    //getImage();
+    // worldMap.updateMap(image);
+    //worldMap.saveMap("result.png");
 }
 
 void Robot::getImage()
@@ -117,6 +128,58 @@ void Robot::moveForward(float dist,float max_speed)
     updateRadar();
 }
 
+void Robot::moveRotate(bool isLeft, float radius, float arc)
+{
+    if (isLeft)
+    {
+       /* x += 2 * radius * sin(arc / 2) * cos(ori + arc / 2);
+        y += 2 * radius * sin(arc / 2) * sin(ori + arc / 2);
+        ori = ori - arc;*/
+        cv::Point2f center(x,y);
+        cv::Point2f vec_r(radius*cos(ori),-radius*sin(ori));
+        center = center - vec_r;
+        cv::Point2f new_vec_r;
+        new_vec_r.x = vec_r.x*cos(arc)+vec_r.y*sin(arc);
+        new_vec_r.y = -vec_r.x*sin(arc)+vec_r.y*cos(arc);
+        cv::Point2f shift = new_vec_r - vec_r;
+        x += shift.x;
+        y += shift.y;
+        ori -= arc;
+        ori = ori<0?ori+2*M_PI:(ori>2*M_PI?ori-2*M_PI:ori);
+
+        float rinner = radius - DIST_BETWEEN_WHEELS / 2;
+        float rout = radius + DIST_BETWEEN_WHEELS / 2;
+        float t = (arc) * rout / 20;
+        int vin = 20 * rinner / rout;
+        goWithSpeed(vin, 20, t);
+    }
+    else  //turn right
+    {
+        //x += 2 * radius * sin(arc / 2) * cos(ori + arc / 2 - M_PI_2);
+        //y += 2 * radius * sin(arc / 2) * sin(ori + arc / 2 - M_PI_2);
+        //ori = ori + arc;
+        cv::Point2f center(x,y);
+        cv::Point2f vec_r(-radius*cos(ori),radius*sin(ori));
+        center = center - vec_r;
+        cv::Point2f new_vec_r;
+        new_vec_r.x = vec_r.x*cos(-arc)+vec_r.y*sin(-arc);
+        new_vec_r.y = -vec_r.x*sin(-arc)+vec_r.y*cos(-arc);
+        cv::Point2f shift = new_vec_r - vec_r;
+        x += shift.x;
+        y += shift.y;
+        ori += arc;
+        ori = ori<0?ori+2*M_PI:(ori>2*M_PI?ori-2*M_PI:ori);
+
+
+        float rinner = radius - DIST_BETWEEN_WHEELS / 2;
+        float rout = radius + DIST_BETWEEN_WHEELS / 2;
+        float t = (arc) * rout / 20;
+        int vin = 20 * rinner / rout;
+        goWithSpeed(20, vin, t);
+    }
+}
+
+
 void Robot::moveTo(const cv::Point2f& wCoord,float max_speed)
 {
     cv::Point2f robotPosition(x,y);
@@ -134,6 +197,7 @@ void Robot::rotateTo(const cv::Point2f &new_dir)
     float dot = new_dir.dot(dir);
     dot = dot>1?1:(dot<-1?-1:dot);
     float angle = acos(dot);
+    printf("angle = %f\n",angle);
     if(cross<0)
         turnRight(angle*180/M_PI);
     else
@@ -166,7 +230,7 @@ void Robot::keepGoal()
         float move_cost = float(te.tv_nsec-ts.tv_nsec)/(1e9);
         float sleepTime = EXTRA_WAIT_TIME+ball2keepline_time-move_cost;
         if(sleepTime>0)
-            uleep(sleepTime*1e6);
+            usleep(sleepTime*1e6);
         moveForward(-fwd_dist,50);
     }
 }
@@ -218,6 +282,43 @@ void Robot::shoot()
     updateRadar();
 }
 
+void Robot::spin(){//}std::vector<cv::Point2f> balls) {
+    cv::Point2f robot_coord(x, y);
+    //printf("find %d balls\n", balls.size());
+    //if (balls.size() < 2)
+     //   return;
+    cv::Point2f ball1(0, 0);// = balls[0];
+    cv::Point2f ball2(0,100);// = balls[1];
+    printf("%f %f\n %f %f\n", ball1.x, ball1.y, ball2.x, ball2.y);
+    //get them by some means of find balls
+    float rspin =  cal_distance(ball1, ball2) / 2;
+    if (rspin < ROBOT_RADIUS +BALL_RADIUS +DELTA_RADIUS)
+        return;
+    float disr1 =  cal_distance(ball1, robot_coord);
+    //printf("%f, %f\n", rspin, disr1);
+    cv::Point2f a = ball1 - robot_coord;
+    cv::Point2f b = ball2 - ball1;
+    float arc = M_PI - acos((a.x *b.x + a.y * b.y) / (2 *rspin * disr1));
+    float turn = a.x * b.y - a.y * b.x;
+    printf("%f, %f\n", a.x, a.y);
+    //cvWaitKey();
+    cv::Point2f pturn(x + 0.01 *a.x, y + 0.01*a.y);
+    moveTo(pturn, 5);
+    moveForward(disr1 * 0.99 - rspin, 20);
+    if (turn > 0) {
+        turnRight(90);
+        moveRotate(true, rspin, 2 * M_PI - arc);
+        usleep(10000);
+        moveRotate(false, rspin, M_PI);
+    }
+    else {
+        turnLeft(90);
+        moveRotate(false, rspin, 2 * M_PI - arc);
+        usleep(10000);
+        moveRotate(true, rspin, M_PI);
+    }
+}
+
 void Robot::updateRadar()
 {
     if(!radar)
@@ -230,7 +331,7 @@ void Robot::updateRadar()
 
     if(shootRoute.size()>1)
     {
-        for(int i=0;i<shootRoute.size()-1;i++)
+        for(int i=0; i<shootRoute.size()-1; i++)
         {
             cvLine(wMap,world2image(shootRoute[i]),world2image(shootRoute[i+1]),CV_RGB(255,128,189),3);
             //printf("coord(%f,%f)\n",shootRoute[i].x,shootRoute[i].y);
@@ -277,47 +378,37 @@ bool Robot::locateBall()
 
 std::vector<cv::Point2f> Robot::findMulBall()
 {
+    getImage();
     std::vector<cv::Point2f> ans;
     std::vector<cv::Point3f> tmp;
-    if (!image_r)
-        return false;
     while (true) {
+        if (!image)
+            return ans;
         ip.setBound(BALL_BOUND);
-        ip.extractMulCircles(image_r, tmp);
-        for (int i = 0; i < tmp.size(); ++i) {
-            for (int j = i + 1; j < tmp.size(); ++j) {
-                if (tmp[i].z != 0 && tmp[j].z != 0) {
-                    if (pow((tmp[i].x - tmp[j].x), 2) + pow((tmp[i].y - tmp[i].y), 2) <= pow((tmp[i].z - tmp[j].z), 2)) {
-                        ((tmp[i].z < tmp[j].z) ? tmp[i].z : tmp[j].z) = 0;
-                    }
-                }
-            }
-        }
+        ip.extractCircles(image, tmp);
         if (tmp.size() <= 0) {
-            turnRight(FIND_BALL_ANGLE);
-            getImage();
-            continue;
+            goto label;
         }
         for (int i = 0; i != tmp.size(); ++i) {
-            if (tmp[i].z != 0) {
-                cv::Point2f rCoord;
-                rCoord = worldMap.coord_screen2robot(cv::Point2f(tmp[i].x, tmp[i].y + tmp[i].z));
-                ball_coord = worldMap.coord_robot2world(rCoord);
-                CvRect bbox = worldMap.getMap_bbox();
-                cv::Point2f ball_coord_img = world2image(ball_coord);
-                if(ball_coord_img.x >= bbox.x && ball_coord_img.x <= bbox.x + bbox.width &&
-                    ball_coord_img.y >= bbox.y && ball_coord_img.y <= bbox.y + bbox.height) {
-                    continue;
-                    //return false;
-                }
-                //for (int k = 0; k != ans.size(); ++k) {
-                 //   if ()
-                //}
-                ans.push_back(ball_coord);
+            cv::Point2f rCoord;
+            rCoord = worldMap.coord_screen2robot(cv::Point2f(tmp[i].x, tmp[i].y + tmp[i].z));
+            cv::Point2f ball_coord_sub = worldMap.coord_robot2world(rCoord);
+            CvRect bbox = worldMap.getMap_bbox();
+            cv::Point2f ball_coord_img = world2image(ball_coord_sub);
+            if (ball_coord_img.x >= bbox.x && ball_coord_img.x <= bbox.x + bbox.width &&
+                ball_coord_img.y >= bbox.y && ball_coord_img.y <= bbox.y + bbox.height) {
+                goto label;
             }
+            if (ans.size() == 1) {
+                if (abs(ball_coord_sub.x - ans[0].x) <= 10 && abs(ball_coord_sub.y - ans[0].y) <= 10) {
+                    goto label;
+                }
+            }
+            ans.push_back(ball_coord_sub);
+            if (ans.size() > 1)
+                break;
         }
-        if (ans.size() > 1)
-            break;
+        label:
         turnRight(FIND_BALL_ANGLE);
         getImage();
     }
@@ -342,17 +433,21 @@ Robot::~Robot()
     if(image_r)
         cvReleaseImage(&image_r);
 }
-bool Robot::locateOwnGate(){
+bool Robot::locateOwnGate()
+{
     IplImage* wMap = worldMap.getMap();
     uchar* wMap_data = (uchar*)wMap->imageData;
     float center_x = 0, center_y = 0;
     float n = 0;
-    for(int i = 0; i < MAP_LEN; i++){
-        for(int j = 0; j < MAP_LEN; j++){
+    for(int i = 0; i < MAP_LEN; i++)
+    {
+        for(int j = 0; j < MAP_LEN; j++)
+        {
             int b = wMap_data[i*MAP_LEN*3+j*3+0];
             int g = wMap_data[i*MAP_LEN*3+j*3+1];
             int r = wMap_data[i*MAP_LEN*3+j*3+2];
-            if(b == 255 && g==0 && r==0){
+            if(b == 255 && g==0 && r==0)
+            {
                 center_x += j;
                 center_y += i;
                 n++;
@@ -360,10 +455,12 @@ bool Robot::locateOwnGate(){
         }
     }
     cvReleaseImage(&wMap);
-    if(n < 10){
+    if(n < 10)
+    {
         return false;
     }
-    else{
+    else
+    {
         center_x = center_x/n;
         center_y = center_y/n;
         ownGoal_coord.x = center_x - (MAP_LEN>>1);

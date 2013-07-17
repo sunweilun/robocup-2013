@@ -38,9 +38,12 @@ public:
     void turnRight(float angle); // angle in degrees
     void moveForward(float dist,float max_speed);
     void moveTo(const cv::Point2f& wCoord,float max_speed);
+    void moveRotate(bool isLeft, float radius, float arc);//time is in second
+    void spin();//std::vector<cv::Point2f> balls);
     void shoot();
     void drawMap(); // excutes predefined movement to draw the map
     void findBall(); // rotate until the target ball is located
+    std::vector<cv::Point2f> findMulBall();
     ~Robot();
 };
 

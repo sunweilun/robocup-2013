@@ -69,8 +69,8 @@ static void getPhoto() {
 	unsigned char tmpbuf[2][MAX_MJPEG_SIZE];
 
 	pthread_mutex_lock(&ca_mutex);
-	memcpy(tmpbuf1, raw_buf1, MAX_MJPEG_SIZE);
-	memcpy(tmpbuf2, raw_buf2, MAX_MJPEG_SIZE);
+	memcpy(tmpbuf[0], raw_buf1, MAX_MJPEG_SIZE);
+	memcpy(tmpbuf[1], raw_buf2, MAX_MJPEG_SIZE);
 	gsize = size;
 	pthread_mutex_unlock(&ca_mutex);
     //printf("2\n");
@@ -103,7 +103,7 @@ static void getPhoto() {
 			fprintf(p, "%.2x %.2x %.2x\n", rgbbuffer[i], rgbbuffer[i + 1], rgbbuffer[i + 2]);
 		fclose(p);
 	}
-	
+
 }
 
 #endif
