@@ -1,4 +1,5 @@
 #include "ImageProcessor.h"
+#define BALL_DEBUG 1
 
 void ImageProcessor::setBound(const cv::Point2f &h_bound,const cv::Point2f &s_bound,const cv::Point2f &v_bound)
 {
@@ -307,9 +308,9 @@ IplImage* ImageProcessor::extractColorBlocks(const IplImage* hsv_img)
     return cb;
 }
 
-std::vector<cv::Point3f> ImageProcessor::extractMulCircles(const IplImage* image)
+void ImageProcessor::extractMulCircles(const IplImage* image, std::vector<cv::Point3f>& res)
 {
-    vector<cv::Point3f> circle_vct;
+    vector<cv::Point3f> tmpv;
 
     IplImage* cpyImage = cvCreateImage(cvGetSize(image), IPL_DEPTH_8U, 3);
     memcpy(cpyImage->imageData, image->imageData, 3*image->width*image->height);
@@ -356,47 +357,16 @@ std::vector<cv::Point3f> ImageProcessor::extractMulCircles(const IplImage* image
         }//for c
         std::cout <<balls.size() << std::endl;
         //cout << "ball.size: " << balls.size() << endl;
-        if (balls.size() > 0) {
+        if(balls.size() > 0) {
             foundBall =  true;
             int res_c = -1;
             int res_r = 0, res_x = 0, res_y = 0;
-            for (int i = 0; i < balls.size(); i++) {
+            for(int i = 0; i < balls.size(); i++){
                 int c = balls.at(i);
                 float* p = (float*)cvGetSeqElem(seqCircles, c);
                 int x = cvRound(p[0]), y = cvRound(p[1]), r = cvRound(p[2]);
-                int testTotal = 0, testPoint = 0;
-                for (int py = y - r - 3; py <= y + r + 3; ++py) {
-                    for (int px = x - r - 3; px <= x + r + 3; ++px) {
-                        //printf("px = %d, py = %d\n", px, py);
-                        if (py >= 0 && py < image->height && px >= 0 && px < image->width &&
-                            (px - x) * (px - x) + (py - y) * (py - y) <= (r + 5) * (r + 5) &&
-                            (px - x) * (px - x) + (py - y) * (py - y) > r* r) {
-                            float h = image_hsv_data[py * image->width * 3 + px * 3 + 0];
-                            //std::cout << h << ' ';
-                            float s = image_hsv_data[py * image->width * 3 + px * 3 + 1];
-                            //std::cout << s << ' ';
-                            float v = image_hsv_data[py * image->width * 3 + px * 3 + 2];
-                            //std::cout << v << std::endl;
-                            testTotal++;
-                            if (inBound(h, s, v)) {
-                                testPoint++;
-                            }
-                        }
-                    }
-                }
-                std::cout << testTotal << std::endl;
-                std::cout << testPoint << std::endl;
-                if ((float)testPoint / testTotal <= 0.17) {
-                    //find the ball we want
-                    std::cout << "find the ball!" << std::endl;
-                    res_r = r;
-                    res_x = x;
-                    res_y = y;
-                    res_c = c;
-                    float* pp = (float*)cvGetSeqElem(seqCircles, res_c);
-                    xx = cvRound(pp[0]); yy = cvRound(pp[1]); rr = cvRound(pp[2]);
-                    circle_vct.push_back(cv::Point3f(xx,yy,rr));
-                }
+                res.push_back(cv::Point3f(x, y, r));
+                tmpv.push_back(cv::Point3f(x, y, r));
             }
         }//if balls.size()
         cvReleaseImage(&image_hsv);
@@ -404,16 +374,16 @@ std::vector<cv::Point3f> ImageProcessor::extractMulCircles(const IplImage* image
     cvReleaseMemStorage(&storage);
     cvReleaseImage(&gray);
     #if BALL_DEBUG
-    if(foundBall){
-        cvCircle(cpyImage, cvPoint(xx, yy), rr, CV_RGB(255, 255, 0), 2);
+    for (int i = 0; i != tmpv.size(); ++i) {
+        cvCircle(cpyImage, cvPoint(tmpv[i].x, tmpv[i].y), tmpv[i].z, CV_RGB(255, 255, 0), 2);
     }
     cvNamedWindow("ball_detect", CV_WINDOW_AUTOSIZE);
     cvMoveWindow("ball_detect", 512, 0);
     cvShowImage("ball_detect", cpyImage);
-    cvWaitKey(100);
+    cvWaitKey(0);
     cvReleaseImage(&cpyImage);
     #endif
-    return circle_vct;
+
 }
 
 std::vector<cv::Point3f> ImageProcessor::extractCircles(const IplImage* image)
