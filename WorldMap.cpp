@@ -17,10 +17,10 @@ IplImage* WorldMap::getMap()
 
 void WorldMap::loadCamParms(const char* fileName)
 {
-        FILE* file = fopen(fileName,"r");
-        for(int i=0;i<8;i++)
-            fscanf(file,"%f\n",&camParms[i]);
-        fclose(file);
+    FILE* file = fopen(fileName,"r");
+    for(int i=0;i<8;i++)
+        fscanf(file,"%f\n",&camParms[i]);
+    fclose(file);
 }
 
 void WorldMap::setParent(Robot* robot)
@@ -185,7 +185,7 @@ void WorldMap::updateMap(const IplImage *img)
         }
     }
 
-#ifdef DEBUG_MAP
+#if DEBUG_MAP
     cvNamedWindow("Map");
     cvShowImage("Map",wMap);
     cvWaitKey();

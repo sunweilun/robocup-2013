@@ -160,3 +160,16 @@ std::vector<cv::Point3f> ball_detection(const IplImage* img, const cv::Point2f& 
 	cvReleaseMemStorage(&storage);
 	return ret;
 }
+
+float getTime(const cv::Point2f &p1,const cv::Point2f &d1,const cv::Point2f &p2,const cv::Point2f &d2)
+{
+    float time = p2.x*d2.y-p2.y*d2.x;
+    time -= p1.x*d2.y-p1.y*d2.x;
+    time /= d1.x*d2.y-d2.x*d1.y;
+    return time;
+}
+
+float length(const cv::Point2f &p)
+{
+    return sqrt(pow(p.x,2)+pow(p.y,2));
+}

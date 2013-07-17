@@ -11,9 +11,6 @@ int main()
     Robot robot;
     robot.radarOn();
     robot.drawMap();
-    robot.findBall();
-    robot.shoot();
-    robot.findBall();
     robot.shoot();
     robot.radarOff();
 #endif
@@ -22,5 +19,4 @@ int main()
     calib();
 #endif
     return 0;
-
 }

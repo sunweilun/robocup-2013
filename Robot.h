@@ -1,6 +1,8 @@
 #ifndef ROBOT_H
 #define ROBOT_H
 #include "WorldMap.h"
+#include <stdio.h>
+#include <sys/time.h>
 
 
 class Robot
@@ -15,14 +17,19 @@ private:
     int imgCounter; // counts number of images
     float x,y,ori; // ori--orientateion
     cv::Point2f ball_coord,ownGoal_coord,oppGoal_coord;
+    cv::Point2f ownGoal_frontDir;
+    float ownGoal_width;
     WorldMap worldMap;
     void getImage(); // get a new image and store it in *image
     bool locateBall(); // locate ball_coord according to *image
     bool locateOwnGate();
     void updateRadar();
+    bool getBallInfo(cv::Point2f &ballVelocity,cv::Point2f &ballPosition);
     std::vector<cv::Point2f> shootRoute;
 public:
     Robot();
+    void keepGoal();
+    void rotateTo(const cv::Point2f &new_dir);
     void radarOn();
     void radarOff();
     void setCoord(float x,float y,float ori);

@@ -1,4 +1,7 @@
-//#define DEBUG_MAP
+#define DEBUG_MAP 0
+#define MIN_BALL_SPEED_TO_KEEP 10
+#define KEEPER_DIST2GOAL 50
+#define EXTRA_WAIT_TIME 3
 
 #define DELTA_RADIUS 15
 #define SHOOT_PREP_DIST 60
