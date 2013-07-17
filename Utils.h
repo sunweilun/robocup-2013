@@ -9,7 +9,7 @@ using namespace std;
 
 bool getTurningPoint(const cv::Point2f& robot,const cv::Point2f& center,const cv::Point& target,cv::Point2f &turningPoint,float radius);
 
-void calib();
+float cal_distance(const cv::Point2f& p1, const cv::Point2f& p2);
 
 IplImage *loadDatImage(char *fn);
 

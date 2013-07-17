@@ -8,6 +8,11 @@ float arctan(float x,float y)//range=(-pi/2,3pi/2)
 	return angle;
 }
 
+float cal_distance(const cv::Point2f& p1, const cv::Point2f& p2) {
+    cv::Point2f delta = p1 - p2;
+    return sqrt(pow(delta.x,2)+pow(delta.y,2));
+}
+
 bool getTurningPoint(const cv::Point2f& robot,const cv::Point2f& center,const cv::Point& target,cv::Point2f &turningPoint,float radius)
 {
     float xB=center.x-robot.x;

@@ -61,11 +61,12 @@ void Robot::turnRight(float angle)
     updateRadar();
 }
 
-void Robot::drawMap() {
+void Robot::drawMap()
+{
     printf("in\n");
     getImage();
     printf("out\n");
-    for(int i=0;i<12;i++)
+    for(int i=0; i<12; i++)
     {
         getImage();
         cvNamedWindow("src", CV_WINDOW_AUTOSIZE);
@@ -96,7 +97,7 @@ void Robot::drawMap() {
     //worldMap.updateMap(image);
     //moveForward(200,30);
     //getImage();
-   // worldMap.updateMap(image);
+    // worldMap.updateMap(image);
     //worldMap.saveMap("result.png");
 }
 
@@ -121,6 +122,33 @@ void Robot::moveForward(float dist,float max_speed)
     goWithDistance(dist,max_speed);
     updateRadar();
 }
+
+void Robot::moveRotate(bool isLeft, float radius, float arc)
+{
+    if (isLeft)
+    {
+        x += 2 * radius * sin(arc / 2) * cos(ori + arc / 2);
+        y += 2 * radius * sin(arc / 2) * sin(ori + arc / 2);
+        ori = ori + arc;
+        float rinner = radius - DIST_BETWEEN_WHEELS / 2;
+        float rout = radius + DIST_BETWEEN_WHEELS / 2;
+        float t = (arc) * rout / 20;
+        int vin = 20 * rinner / rout;
+        goWithSpeed(vin, 20, t);
+    }
+    else  //turn right
+    {
+        x += 2 * radius * sin(arc / 2) * cos(ori - arc / 2);
+        y += 2 * radius * sin(arc / 2) * sin(ori - arc / 2);
+        ori = ori - arc;
+        float rinner = radius - DIST_BETWEEN_WHEELS / 2;
+        float rout = radius + DIST_BETWEEN_WHEELS / 2;
+        float t = (arc) * rout / 20;
+        int vin = 20 * rinner / rout;
+        goWithSpeed(20, vin, t);
+    }
+}
+
 
 void Robot::moveTo(const cv::Point2f& wCoord,float max_speed)
 {
@@ -181,6 +209,38 @@ void Robot::shoot()
     updateRadar();
 }
 
+void Robot::spin(std::vector<cv::Point2f> balls) {
+    cv::Point2f robot_coord(x, y);
+    printf("find %d balls\n", balls.size());
+    if (balls.size() < 2)
+        return;
+    cv::Point2f ball1 = balls[0];
+    cv::Point2f ball2 = balls[1];
+    printf("%f %f\n %f %f\n", ball1.x, ball1.y, ball2.x, ball2.y);
+    //get them by some means of find balls
+    float rspin =  cal_distance(ball1, ball2) / 2;
+    float disr1 =  cal_distance(ball1, robot_coord);
+    cv::Point2f a = ball1 - robot_coord;
+    cv::Point2f b = ball2 - ball1;
+    float arc = M_PI - acos((a.x *b.x + a.y * b.y) / (2 *rspin * disr1));
+    float turn = a.x * b.y - a.y * b.x;
+    cv::Point2f pturn(x + 0.01 *a.x, y + 0.01*y);
+    moveTo(pturn, 5);
+    moveForward(disr1 * 0.99 - rspin, 20);
+    if (turn > 0) {
+        turnRight(90);
+        moveRotate(true, rspin, 2 * M_PI - arc);
+        usleep(10000);
+        moveRotate(false, rspin, M_PI);
+    }
+    else {
+        turnLeft(90);
+        moveRotate(false, rspin, 2 * M_PI - arc);
+        usleep(10000);
+        moveRotate(true, rspin, M_PI);
+    }
+}
+
 void Robot::updateRadar()
 {
     if(!radar)
@@ -193,7 +253,7 @@ void Robot::updateRadar()
 
     if(shootRoute.size()>1)
     {
-        for(int i=0;i<shootRoute.size()-1;i++)
+        for(int i=0; i<shootRoute.size()-1; i++)
         {
             cvLine(wMap,world2image(shootRoute[i]),world2image(shootRoute[i+1]),CV_RGB(255,128,189),3);
             //printf("coord(%f,%f)\n",shootRoute[i].x,shootRoute[i].y);
@@ -253,17 +313,21 @@ Robot::~Robot()
     if(image)
         cvReleaseImage(&image);
 }
-bool Robot::locateOwnGate(){
+bool Robot::locateOwnGate()
+{
     IplImage* wMap = worldMap.getMap();
     uchar* wMap_data = (uchar*)wMap->imageData;
     float center_x = 0, center_y = 0;
     float n = 0;
-    for(int i = 0; i < MAP_LEN; i++){
-        for(int j = 0; j < MAP_LEN; j++){
+    for(int i = 0; i < MAP_LEN; i++)
+    {
+        for(int j = 0; j < MAP_LEN; j++)
+        {
             int b = wMap_data[i*MAP_LEN*3+j*3+0];
             int g = wMap_data[i*MAP_LEN*3+j*3+1];
             int r = wMap_data[i*MAP_LEN*3+j*3+2];
-            if(b == 255 && g==0 && r==0){
+            if(b == 255 && g==0 && r==0)
+            {
                 center_x += j;
                 center_y += i;
                 n++;
@@ -271,10 +335,12 @@ bool Robot::locateOwnGate(){
         }
     }
     cvReleaseImage(&wMap);
-    if(n < 10){
+    if(n < 10)
+    {
         return false;
     }
-    else{
+    else
+    {
         center_x = center_x/n;
         center_y = center_y/n;
         ownGoal_coord.x = center_x - (MAP_LEN>>1);
