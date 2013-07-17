@@ -14,7 +14,7 @@ public:
     IplImage* eliminateBackground(const IplImage* hsv_img);
     IplImage* extractColorBlocks(const IplImage* hsv_img);
     std::vector<cv::Point3f> extractCircles(const IplImage* img);
-    std::vector<cv::Point3f> extractMulCircles(const IplImage* img);
+    void extractMulCircles(const IplImage* img);
     //sk add
     IplImage* deleteNoise(const IplImage* image);
     bool getOnlyBlue(const IplImage * src, IplImage * blue);

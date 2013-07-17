@@ -307,9 +307,9 @@ IplImage* ImageProcessor::extractColorBlocks(const IplImage* hsv_img)
     return cb;
 }
 
-std::vector<cv::Point3f> ImageProcessor::extractMulCircles(const IplImage* image)
+void ImageProcessor::extractMulCircles(const IplImage* image, std::vector<cv::Point3f>& res)
 {
-    vector<cv::Point3f> circle_vct;
+    //vector<cv::Point3f> circle_vct;
 
     IplImage* cpyImage = cvCreateImage(cvGetSize(image), IPL_DEPTH_8U, 3);
     memcpy(cpyImage->imageData, image->imageData, 3*image->width*image->height);
@@ -355,39 +355,18 @@ std::vector<cv::Point3f> ImageProcessor::extractMulCircles(const IplImage* image
             }
         }//for c
         //cout << "ball.size: " << balls.size() << endl;
-        if (balls.size() > 0) {
+        if(balls.size() > 0) {
             foundBall =  true;
             int res_c = -1;
             int res_r = 0, res_x = 0, res_y = 0;
-            for (int i = 0; i < balls.size(); i++) {
+            for(int i = 0; i < balls.size(); i++){
                 int c = balls.at(i);
                 float* p = (float*)cvGetSeqElem(seqCircles, c);
                 int x = cvRound(p[0]), y = cvRound(p[1]), r = cvRound(p[2]);
-                int testTotal = 0, testPoint = 0;
-                for (int px = x - r - 1; px <= x + r + 1; ++px) {
-                    for (int py = y - r - 1; py <= y + r + 1; ++py) {
-                        if (px >= 0 && px < image->height && py >= 0 && py < image->width && 
-                            (px - x) * (px - x) + (py - y) * (py - y) == (r + 1) * (r + 1)) {
-                            float h = image_hsv_data[px * image->width * 3 + py * 3 + 0];
-                            float s = image_hsv_data[px * image->width * 3 + py * 3 + 1];
-                            float v = image_hsv_data[px * image->width * 3 + py * 3 + 2];
-                            testTotal++;
-                            if (inBound(h, s, v)) {
-                                testPoint++;
-                            }
-                        }
-                    }
-                }
-                if ((float)testPoint / TotalPoint <= 0.25) {
-                    //find the ball we want
-                    res_r = r;
-                    res_x = x;
-                    res_y = y;
-                    res_c = c;
-                    float* pp = (float*)cvGetSeqElem(seqCircles, res_c);
-                    xx = cvRound(pp[0]); yy = cvRound(pp[1]); rr = cvRound(pp[2]);
-                    circle_vct.push_back(cv::Point3f(xx,yy,rr));
-                }
+                //res_r = r, res_x = x, res_y = y, res_c = c;
+                //float* pp = (float*)cvGetSeqElem(seqCircles, res_c);
+                //xx = cvRound(pp[0]); yy = cvRound(pp[1]); rr = cvRound(pp[2]);
+                res.push_back(cv::Point3f(x, y, r));
             }
         }//if balls.size()
         cvReleaseImage(&image_hsv);
@@ -405,10 +384,7 @@ std::vector<cv::Point3f> ImageProcessor::extractMulCircles(const IplImage* image
     cvReleaseImage(&cpyImage);
     #endif
 
-    if (circle_vct[0].z < circle_cvt[1].z)
-        swap(circle_vct[0], circle_vct[1]);
-
-    return circle_vct;
+    //return circle_vct;
 }
 
 std::vector<cv::Point3f> ImageProcessor::extractCircles(const IplImage* image)
