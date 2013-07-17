@@ -127,9 +127,21 @@ void Robot::moveRotate(bool isLeft, float radius, float arc)
 {
     if (isLeft)
     {
-        x += 2 * radius * sin(arc / 2) * cos(ori + arc / 2);
+       /* x += 2 * radius * sin(arc / 2) * cos(ori + arc / 2);
         y += 2 * radius * sin(arc / 2) * sin(ori + arc / 2);
-        ori = ori + arc;
+        ori = ori - arc;*/
+        cv::Point2f center(x,y);
+        cv::Point2f vec_r(radius*cos(ori),-radius*sin(ori));
+        center = center - vec_r;
+        cv::Point2f new_vec_r;
+        new_vec_r.x = vec_r.x*cos(arc)+vec_r.y*sin(arc);
+        new_vec_r.y = -vec_r.x*sin(arc)+vec_r.y*cos(arc);
+        cv::Point2f shift = new_vec_r - vec_r;
+        x += shift.x;
+        y += shift.y;
+        ori -= arc;
+        ori = ori<0?ori+2*M_PI:(ori>2*M_PI?ori-2*M_PI:ori);
+
         float rinner = radius - DIST_BETWEEN_WHEELS / 2;
         float rout = radius + DIST_BETWEEN_WHEELS / 2;
         float t = (arc) * rout / 20;
@@ -138,9 +150,22 @@ void Robot::moveRotate(bool isLeft, float radius, float arc)
     }
     else  //turn right
     {
-        x += 2 * radius * sin(arc / 2) * cos(ori - arc / 2);
-        y += 2 * radius * sin(arc / 2) * sin(ori - arc / 2);
-        ori = ori - arc;
+        //x += 2 * radius * sin(arc / 2) * cos(ori + arc / 2 - M_PI_2);
+        //y += 2 * radius * sin(arc / 2) * sin(ori + arc / 2 - M_PI_2);
+        //ori = ori + arc;
+        cv::Point2f center(x,y);
+        cv::Point2f vec_r(-radius*cos(ori),radius*sin(ori));
+        center = center - vec_r;
+        cv::Point2f new_vec_r;
+        new_vec_r.x = vec_r.x*cos(-arc)+vec_r.y*sin(-arc);
+        new_vec_r.y = -vec_r.x*sin(-arc)+vec_r.y*cos(-arc);
+        cv::Point2f shift = new_vec_r - vec_r;
+        x += shift.x;
+        y += shift.y;
+        ori += arc;
+        ori = ori<0?ori+2*M_PI:(ori>2*M_PI?ori-2*M_PI:ori);
+
+
         float rinner = radius - DIST_BETWEEN_WHEELS / 2;
         float rout = radius + DIST_BETWEEN_WHEELS / 2;
         float t = (arc) * rout / 20;
@@ -167,6 +192,7 @@ void Robot::rotateTo(const cv::Point2f &new_dir)
     float dot = new_dir.dot(dir);
     dot = dot>1?1:(dot<-1?-1:dot);
     float angle = acos(dot);
+    printf("angle = %f\n",angle);
     if(cross<0)
         turnRight(angle*180/M_PI);
     else
@@ -199,7 +225,7 @@ void Robot::keepGoal()
         float move_cost = float(te.tv_nsec-ts.tv_nsec)/(1e9);
         float sleepTime = EXTRA_WAIT_TIME+ball2keepline_time-move_cost;
         if(sleepTime>0)
-            uleep(sleepTime*1e6);
+            usleep(sleepTime*1e6);
         moveForward(-fwd_dist,50);
     }
 }
@@ -251,22 +277,27 @@ void Robot::shoot()
     updateRadar();
 }
 
-void Robot::spin(std::vector<cv::Point2f> balls) {
+void Robot::spin(){//}std::vector<cv::Point2f> balls) {
     cv::Point2f robot_coord(x, y);
-    printf("find %d balls\n", balls.size());
-    if (balls.size() < 2)
-        return;
-    cv::Point2f ball1 = balls[0];
-    cv::Point2f ball2 = balls[1];
+    //printf("find %d balls\n", balls.size());
+    //if (balls.size() < 2)
+     //   return;
+    cv::Point2f ball1(0, 0);// = balls[0];
+    cv::Point2f ball2(0,100);// = balls[1];
     printf("%f %f\n %f %f\n", ball1.x, ball1.y, ball2.x, ball2.y);
     //get them by some means of find balls
     float rspin =  cal_distance(ball1, ball2) / 2;
+    if (rspin < ROBOT_RADIUS +BALL_RADIUS +DELTA_RADIUS)
+        return;
     float disr1 =  cal_distance(ball1, robot_coord);
+    //printf("%f, %f\n", rspin, disr1);
     cv::Point2f a = ball1 - robot_coord;
     cv::Point2f b = ball2 - ball1;
     float arc = M_PI - acos((a.x *b.x + a.y * b.y) / (2 *rspin * disr1));
     float turn = a.x * b.y - a.y * b.x;
-    cv::Point2f pturn(x + 0.01 *a.x, y + 0.01*y);
+    printf("%f, %f\n", a.x, a.y);
+    //cvWaitKey();
+    cv::Point2f pturn(x + 0.01 *a.x, y + 0.01*a.y);
     moveTo(pturn, 5);
     moveForward(disr1 * 0.99 - rspin, 20);
     if (turn > 0) {

@@ -386,7 +386,7 @@ std::vector<cv::Point3f> ImageProcessor::extractMulCircles(const IplImage* image
                 }
                 std::cout << testTotal << std::endl;
                 std::cout << testPoint << std::endl;
-                if ((float)testPoint / testTotal <= 0.12) {
+                if ((float)testPoint / testTotal <= 0.17) {
                     //find the ball we want
                     std::cout << "find the ball!" << std::endl;
                     res_r = r;

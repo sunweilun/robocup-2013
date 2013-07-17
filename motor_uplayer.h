@@ -49,6 +49,8 @@ void motor_init()
 
 double getRotateTime (int v, double arc)
 {
+    if (arc - ARC_DELAY <= 0)
+        return 0;
     double dis = DIST_BETWEEN_WHEELS / 2;// rotate weel radius
     double t = (arc-ARC_DELAY) * dis / v;
     return t * 1000000;
