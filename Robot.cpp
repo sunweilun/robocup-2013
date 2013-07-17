@@ -385,24 +385,25 @@ std::vector<cv::Point2f> Robot::findMulBall()
         if (tmp.size() <= 0) {
             goto label;
         }
-        cv::Point2f rCoord;
-        rCoord = worldMap.coord_screen2robot(cv::Point2f(tmp[i].x, tmp[i].y + tmp[i].z));
-        ball_coord = worldMap.coord_robot2world(rCoord);
-        CvRect bbox = worldMap.getMap_bbox();
-        cv::Point2f ball_coord_img = world2image(ball_coord);
-        if (ball_coord_img.x >= bbox.x && ball_coord_img.x <= bbox.x + bbox.width &&
-            ball_coord_img.y >= bbox.y && ball_coord_img.y <= bbox.y + bbox.height) {
-            continue;
-            //return false;
-        }
-        if (ans.size() == 1) {
-            if (abs(ball_coord.x - ans[0].x) <= 10 && abs(ball_coord.y - ans[0].y) <= 10) {
+        for (int i = 0; i != tmp.size(); ++i) {
+            cv::Point2f rCoord;
+            rCoord = worldMap.coord_screen2robot(cv::Point2f(tmp[i].x, tmp[i].y + tmp[i].z));
+            cv::Point2f ball_coord_sub = worldMap.coord_robot2world(rCoord);
+            CvRect bbox = worldMap.getMap_bbox();
+            cv::Point2f ball_coord_img = world2image(ball_coord_sub);
+            if (ball_coord_img.x >= bbox.x && ball_coord_img.x <= bbox.x + bbox.width &&
+                ball_coord_img.y >= bbox.y && ball_coord_img.y <= bbox.y + bbox.height) {
                 goto label;
             }
+            if (ans.size() == 1) {
+                if (abs(ball_coord_sub.x - ans[0].x) <= 10 && abs(ball_coord_sub.y - ans[0].y) <= 10) {
+                    goto label;
+                }
+            }
+            ans.push_back(ball_coord_sub);
+            if (ans.size() > 1)
+                break;
         }
-        ans.push_back(ball_coord);
-        if (ans.size() > 1)
-            break;
         label:
         turnRight(FIND_BALL_ANGLE);
         getImage();
