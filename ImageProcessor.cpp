@@ -1,5 +1,4 @@
 #include "ImageProcessor.h"
-#define BALL_DEBUG 1
 
 void ImageProcessor::setBound(const cv::Point2f &h_bound,const cv::Point2f &s_bound,const cv::Point2f &v_bound)
 {

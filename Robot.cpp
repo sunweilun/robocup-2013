@@ -382,10 +382,10 @@ std::vector<cv::Point2f> Robot::findMulBall()
     std::vector<cv::Point2f> ans;
     std::vector<cv::Point3f> tmp;
     while (true) {
-        if (!image)
+        if (!image_r)
             return ans;
         ip.setBound(BALL_BOUND);
-        ip.extractCircles(image, tmp);
+        ip.extractMulCircles(image_r, tmp);
         if (tmp.size() <= 0) {
             goto label;
         }
