@@ -17,9 +17,6 @@ int main()
     robot.shoot();
     //robot.findBall();
     //robot.shoot();
-=======
-    robot.shoot();
->>>>>>> 2ab138f50a5410505dfb5217fa756cf855ae1193
     robot.radarOff();
     */
         std::vector<cv::Point2f> ans = robot.findMulBall();
