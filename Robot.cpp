@@ -377,46 +377,33 @@ std::vector<cv::Point2f> Robot::findMulBall()
     getImage();
     std::vector<cv::Point2f> ans;
     std::vector<cv::Point3f> tmp;
-    if (!image)
-        return ans;
     while (true) {
+        if (!image)
+            return ans;
         ip.setBound(BALL_BOUND);
-        ip.extractMulCircles(image, tmp);
-        for (int i = 0; i < tmp.size(); ++i) {
-            for (int j = i + 1; j < tmp.size(); ++j) {
-                if (tmp[i].z != 0 && tmp[j].z != 0) {
-                    if (pow((tmp[i].x - tmp[j].x), 2) + pow((tmp[i].y - tmp[i].y), 2) <= pow((tmp[i].z - tmp[j].z), 2)) {
-                        ((tmp[i].z < tmp[j].z) ? tmp[i].z : tmp[j].z) = 0;
-                    }
-                }
-            }
-        }
+        ip.extractCircles(image, tmp);
         if (tmp.size() <= 0) {
-            turnRight(FIND_BALL_ANGLE);
-            getImage();
-            continue;
+            goto label;
         }
-        for (int i = 0; i != tmp.size(); ++i) {
-            std::cout << i << ' ' << tmp[i].z << std::endl;
-            if (tmp[i].z != 0) {
-                cv::Point2f rCoord;
-                rCoord = worldMap.coord_screen2robot(cv::Point2f(tmp[i].x, tmp[i].y + tmp[i].z));
-                ball_coord = worldMap.coord_robot2world(rCoord);
-                CvRect bbox = worldMap.getMap_bbox();
-                cv::Point2f ball_coord_img = world2image(ball_coord);
-                if(ball_coord_img.x >= bbox.x && ball_coord_img.x <= bbox.x + bbox.width &&
-                    ball_coord_img.y >= bbox.y && ball_coord_img.y <= bbox.y + bbox.height) {
-                    continue;
-                    //return false;
-                }
-                //for (int k = 0; k != ans.size(); ++k) {
-                 //   if ()
-                //}
-                ans.push_back(ball_coord);
+        cv::Point2f rCoord;
+        rCoord = worldMap.coord_screen2robot(cv::Point2f(tmp[i].x, tmp[i].y + tmp[i].z));
+        ball_coord = worldMap.coord_robot2world(rCoord);
+        CvRect bbox = worldMap.getMap_bbox();
+        cv::Point2f ball_coord_img = world2image(ball_coord);
+        if (ball_coord_img.x >= bbox.x && ball_coord_img.x <= bbox.x + bbox.width &&
+            ball_coord_img.y >= bbox.y && ball_coord_img.y <= bbox.y + bbox.height) {
+            continue;
+            //return false;
+        }
+        if (ans.size() == 1) {
+            if (abs(ball_coord.x - ans[0].x) <= 10 && abs(ball_coord.y - ans[0].y) <= 10) {
+                goto label;
             }
         }
+        ans.push_back(ball_coord);
         if (ans.size() > 1)
             break;
+        label:
         turnRight(FIND_BALL_ANGLE);
         getImage();
     }

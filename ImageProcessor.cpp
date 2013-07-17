@@ -310,8 +310,6 @@ IplImage* ImageProcessor::extractColorBlocks(const IplImage* hsv_img)
 
 void ImageProcessor::extractMulCircles(const IplImage* image, std::vector<cv::Point3f>& res)
 {
-    vector<cv::Point3f> tmpv;
-
     IplImage* cpyImage = cvCreateImage(cvGetSize(image), IPL_DEPTH_8U, 3);
     memcpy(cpyImage->imageData, image->imageData, 3*image->width*image->height);
 
@@ -357,17 +355,24 @@ void ImageProcessor::extractMulCircles(const IplImage* image, std::vector<cv::Po
         }//for c
         std::cout <<balls.size() << std::endl;
         //cout << "ball.size: " << balls.size() << endl;
-        if(balls.size() > 0) {
+        if(balls.size() > 0){
             foundBall =  true;
             int res_c = -1;
             int res_r = 0, res_x = 0, res_y = 0;
-            for(int i = 0; i < balls.size(); i++){
+            for(int i = 0; i < balls.size(); i++) {
                 int c = balls.at(i);
                 float* p = (float*)cvGetSeqElem(seqCircles, c);
                 int x = cvRound(p[0]), y = cvRound(p[1]), r = cvRound(p[2]);
-                res.push_back(cv::Point3f(x, y, r));
-                tmpv.push_back(cv::Point3f(x, y, r));
+                if(r > res_r){
+                    res_r = r;
+                    res_x = x;
+                    res_y = y;
+                    res_c = c;
+                }
             }
+            float* pp = (float*)cvGetSeqElem(seqCircles, res_c);
+            xx = cvRound(pp[0]); yy = cvRound(pp[1]); rr = cvRound(pp[2]);
+            res.push_back(cv::Point3f(xx,yy,rr));
         }//if balls.size()
         cvReleaseImage(&image_hsv);
     }
