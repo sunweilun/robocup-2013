@@ -11,13 +11,18 @@ int main()
 {
 #if ROBOTTEST
     Robot robot;
-    robot.radarOn();
+    /*robot.radarOn();
     robot.drawMap();
     robot.findBall();
     robot.shoot();
     //robot.findBall();
     //robot.shoot();
     robot.radarOff();
+    */
+        std::vector<cv::Point2f> ans = robot.findMulBall();
+        //printf("1\n");
+        for (int i = 0; i != ans.size(); ++i)
+            printf("x = %f, y = %f\n", ans[i].x, ans[i].y);
 #endif
 
 #if CALIBTEST

@@ -35,6 +35,7 @@ public:
     void shoot();
     void drawMap(); // excutes predefined movement to draw the map
     void findBall(); // rotate until the target ball is located
+    std::vector<cv::Point2f> findMulBall();
     ~Robot();
 };
 
