@@ -1,6 +1,7 @@
 #include "Robot.h"
 #include "motor_uplayer.h"
 #include "getPhoto.h"
+#include <math.h>
 
 Robot::Robot()
 {
@@ -273,29 +274,43 @@ bool Robot::locateBall()
 std::vector<cv::Point2f> Robot::findMulBall()
 {
     std::vector<cv::Point2f> ans;
+    std::vector<cv::Point3f> tmp;
     if (!image)
         return false;
     while (true) {
         ip.setBound(BALL_BOUND);
-        std::vector<cv::Point3f> circles = ip.extractMulCircles(image);
-        if (circles.size() <= 0)
-        {
+        ip.extractMulCircles(image, tmp);
+        for (int i = 0; i < tmp.size(); ++i) {
+            for (int j = i + 1; j < tmp.size(); ++j) {
+                if (tmp[i].z != 0 && tmp[j].z != 0) {
+                    if (pow((tmp[i].x - tmp[j].x), 2) + pow((tmp[i].y - tmp[i].y), 2) <= pow((tmp[i].z - tmp[j].z), 2)) {
+                        ((tmp[i].z < tmp[j].z) ? tmp[i].z : tmp[j].z) = 0; 
+                    }
+                }
+            }
+        }
+        if (tmp.size() <= 0) {
             turnRight(FIND_BALL_ANGLE);
             getImage();
             continue;
         }
-        for (int i = 0; i != circles.size(); ++i) {
-            cv::Point2f rCoord;
-            rCoord = worldMap.coord_screen2robot(cv::Point2f(circles[i].x,circles[i].y+circles[i].z));
-            ball_coord = worldMap.coord_robot2world(rCoord);
-            CvRect bbox = worldMap.getMap_bbox();
-            cv::Point2f ball_coord_img = world2image(ball_coord);
-            if(ball_coord_img.x>=bbox.x && ball_coord_img.x<=bbox.x+bbox.width && ball_coord_img.y>=bbox.y && ball_coord_img.y<=bbox.y+bbox.height)
-            {
-                continue;
-                //return false;
+        for (int i = 0; i != tmp.size(); ++i) {
+            if (tmp[i].z != 0) {
+                cv::Point2f rCoord;
+                rCoord = worldMap.coord_screen2robot(cv::Point2f(tmp[i].x, tmp[i].y + tmp[i].z));
+                ball_coord = worldMap.coord_robot2world(rCoord);
+                CvRect bbox = worldMap.getMap_bbox();
+                cv::Point2f ball_coord_img = world2image(ball_coord);
+                if(ball_coord_img.x >= bbox.x && ball_coord_img.x <= bbox.x + bbox.width && 
+                    ball_coord_img.y >= bbox.y && ball_coord_img.y <= bbox.y + bbox.height) {
+                    continue;
+                    //return false;
+                }
+                //for (int k = 0; k != ans.size(); ++k) {
+                 //   if ()
+                //}
+                ans.push_back(ball_coord);
             }
-            ans.push_back(ball_coord);
         }
         if (ans.size() > 1)
             break;
