@@ -13,7 +13,8 @@ private:
     bool radar; // 1 when radar is on, 0 otherwise
     bool ballLocated,ownGoalLocated,oppGoalLocated;
     ImageProcessor ip;
-    IplImage* image; // stores newly acquired image
+    IplImage* image_l; // stores newly acquired image
+    IplImage* image_r;
     int imgCounter; // counts number of images
     float x,y,ori; // ori--orientateion
     cv::Point2f ball_coord,ownGoal_coord,oppGoal_coord;

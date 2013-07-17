@@ -10,7 +10,8 @@ Robot::Robot()
     motor_init();
     imgCounter = 0;
     worldMap.loadCamParms(CAM_PARMS_PATH);
-    image = NULL;
+    image_l = NULL;
+    image_r = NULL;
     ballLocated = false;
     ownGoalLocated = false;
     oppGoalLocated = false;
@@ -71,11 +72,11 @@ void Robot::drawMap() {
         getImage();
         cvNamedWindow("src", CV_WINDOW_AUTOSIZE);
         cvMoveWindow("src", 512, 512);
-        cvShowImage("src", image);
+        cvShowImage("src", image_r);
         cvWaitKey(100);
 
         printf("draw start\n");
-        worldMap.updateMap(image);
+        worldMap.updateMap(image_r);
         locateOwnGate();
         printf("draw finish\n");
         turnRight(30);
@@ -97,11 +98,14 @@ void Robot::getImage()
     getPhoto();
     char dp[] = DATA_PATH;
     char fn[1024];
-    sprintf(fn,"%s%d.dat",dp,imgCounter);
-    printf("file = %s\n", fn);
-    if(image)
-        cvReleaseImage(&image);
-    image = loadDatImage(fn);
+    sprintf(fn,"%s%d_l.dat",dp,imgCounter);
+    if(image_l)
+        cvReleaseImage(&image_l);
+    image_l = loadDatImage(fn);
+    sprintf(fn,"%s%d_r.dat",dp,imgCounter);
+    if(image_r)
+        cvReleaseImage(&image_r);
+    image_r = loadDatImage(fn);
     imgCounter++;
 }
 
@@ -248,10 +252,10 @@ void Robot::updateRadar()
 
 bool Robot::locateBall()
 {
-    if(!image)
+    if(!image_r)
         return false;
     ip.setBound(BALL_BOUND);
-    std::vector<cv::Point3f> circles = ip.extractCircles(image);
+    std::vector<cv::Point3f> circles = ip.extractCircles(image_r);
     if(circles.size()<=0)
     {
         return false;
@@ -275,16 +279,16 @@ std::vector<cv::Point2f> Robot::findMulBall()
 {
     std::vector<cv::Point2f> ans;
     std::vector<cv::Point3f> tmp;
-    if (!image)
+    if (!image_r)
         return false;
     while (true) {
         ip.setBound(BALL_BOUND);
-        ip.extractMulCircles(image, tmp);
+        ip.extractMulCircles(image_r, tmp);
         for (int i = 0; i < tmp.size(); ++i) {
             for (int j = i + 1; j < tmp.size(); ++j) {
                 if (tmp[i].z != 0 && tmp[j].z != 0) {
                     if (pow((tmp[i].x - tmp[j].x), 2) + pow((tmp[i].y - tmp[i].y), 2) <= pow((tmp[i].z - tmp[j].z), 2)) {
-                        ((tmp[i].z < tmp[j].z) ? tmp[i].z : tmp[j].z) = 0; 
+                        ((tmp[i].z < tmp[j].z) ? tmp[i].z : tmp[j].z) = 0;
                     }
                 }
             }
@@ -301,7 +305,7 @@ std::vector<cv::Point2f> Robot::findMulBall()
                 ball_coord = worldMap.coord_robot2world(rCoord);
                 CvRect bbox = worldMap.getMap_bbox();
                 cv::Point2f ball_coord_img = world2image(ball_coord);
-                if(ball_coord_img.x >= bbox.x && ball_coord_img.x <= bbox.x + bbox.width && 
+                if(ball_coord_img.x >= bbox.x && ball_coord_img.x <= bbox.x + bbox.width &&
                     ball_coord_img.y >= bbox.y && ball_coord_img.y <= bbox.y + bbox.height) {
                     continue;
                     //return false;
@@ -333,8 +337,10 @@ void Robot::findBall()
 
 Robot::~Robot()
 {
-    if(image)
-        cvReleaseImage(&image);
+    if(image_l)
+        cvReleaseImage(&image_l);
+    if(image_r)
+        cvReleaseImage(&image_r);
 }
 bool Robot::locateOwnGate(){
     IplImage* wMap = worldMap.getMap();
