@@ -2,7 +2,7 @@
 
 int checkColorThreshold(float* c)
 {
-	if(abs(c[0]-BALL_COLOR_HSV.val[0])<rg[0] && abs(c[1]-BALL_COLOR_HSV.val[1])<rg[1] && abs(c[2]-BALL_COLOR_HSV.val[2])<rg[2])
+	if(c[0]<BALL_H_UB && c[0]>BALL_H_LB && c[1]<BALL_S_UB && c[1]>BALL_S_LB  && c[2]<BALL_V_UB && c[2]>BALL_V_LB )
 		return 1;
 	else
 		return 0;
@@ -100,13 +100,13 @@ cv::Point3f BallTracker::ballDetect(const IplImage* image1)
 
 	cvSet(bina,cvScalar(0));
 	int sum=0;
-	for(int i=0;i<height;++i)
+	for(int i=0;i<240;++i)
 	{
-		for(int j=0;j<width;++j)
+		for(int j=0;j<320;++j)
 		{
-			if(checkColorThreshold(dat1+(i*width+j)*3)==0)
+			if(checkColorThreshold(dat1+(i*320+j)*3)==0)
 				continue;
-			bina->imageData[i*width+j]=255;
+			bina->imageData[i*320+j]=255;
 			++sum;
 		}
 	}
@@ -116,17 +116,17 @@ cv::Point3f BallTracker::ballDetect(const IplImage* image1)
 	int newId=1;
 	deque<int> waitQueue;
 	vector<Area> areas;
-	for(int i=0;i<height;++i)
+	for(int i=0;i<240;++i)
 	{
-		for(int j=0;j<width;++j)
+		for(int j=0;j<320;++j)
 		{
-			if(b[i*width+j]==0)
+			if(b[i*320+j]==0)
 				continue;
-			if(id[i*width+j]>0)
+			if(id[i*320+j]>0)
 				continue;
-			waitQueue.push_back(i*width+j);
+			waitQueue.push_back(i*320+j);
 			int curPos=waitQueue.front();
-			id[i*width+j]=newId;
+			id[i*320+j]=newId;
 			int curArea=1;
 			int xx=0;
 			int yy=0;
@@ -156,16 +156,16 @@ cv::Point3f BallTracker::ballDetect(const IplImage* image1)
 						waitQueue.push_back(curPos-1);
 					}
 				}
-				if(curPos-width>0)
+				if(curPos-320>0)
 				{
-					if((unsigned char)b[curPos-width]==255 && id[curPos-width]==0)
+					if((unsigned char)b[curPos-320]==255 && id[curPos-320]==0)
 					{
-						id[curPos-width]=newId;
+						id[curPos-320]=newId;
 						++curArea;
-						waitQueue.push_back(curPos-width);
+						waitQueue.push_back(curPos-320);
 					}
 				}
-				if(curPos%320+1<width)
+				if(curPos%320+1<320)
 				{
 					if((unsigned char)b[curPos+1]==255 && id[curPos+1]==0)
 					{
@@ -174,13 +174,13 @@ cv::Point3f BallTracker::ballDetect(const IplImage* image1)
 						waitQueue.push_back(curPos+1);
 					}
 				}
-				if(curPos+width<240*320)
+				if(curPos+320<240*320)
 				{
-					if((unsigned char)b[curPos+width]==255 && id[curPos+width]==0)
+					if((unsigned char)b[curPos+320]==255 && id[curPos+320]==0)
 					{
-						id[curPos+width]=newId;
+						id[curPos+320]=newId;
 						++curArea;
-						waitQueue.push_back(curPos+width);
+						waitQueue.push_back(curPos+320);
 					}
 				}
 				waitQueue.pop_front();

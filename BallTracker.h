@@ -9,15 +9,10 @@ using namespace std;
 
 class Robot;
 
-int width = 320;
-int height = 240;
-CvScalar BALL_COLOR_HSV = cvScalar(270,0.52,0.5);
-const double rg[3]={20,0.2,0.3};
+//CvScalar BALL_COLOR_HSV = cvScalar(270,0.52,0.5);
+//const double rg[3]={20,0.2,0.3};
 
-IplImage *loadDatImage(char *fn);
-cv::Point3f normalize(cv::Point3f& p);
 int checkColorThreshold(float* c);
-int ballTrack(const IplImage* image1, const IplImage* image2, cv::Point3f& xyr1, cv::Point3f xyr2);
 
 struct BallTracker
 {

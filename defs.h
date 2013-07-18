@@ -23,6 +23,8 @@
 #define BALL_RADIUS 10
 #define ROBOT_RADIUS 20
 
+
+
 #define GRASS_H_LB 150
 #define GRASS_H_UB 190
 #define GRASS_S_LB 0.4
@@ -31,7 +33,7 @@
 #define GRASS_V_UB 0.85
 
 #define LINE_H_LB 180
-#define LINE_H_UB 380
+#define LINE_H_UB 360
 #define LINE_S_LB 0.01
 #define LINE_S_UB 0.5
 #define LINE_V_LB 0.9
