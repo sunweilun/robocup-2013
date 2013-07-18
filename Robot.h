@@ -1,6 +1,7 @@
 #ifndef ROBOT_H
 #define ROBOT_H
 #include "WorldMap.h"
+#include "BallTracker.h"
 #include <stdio.h>
 #include <sys/time.h>
 
@@ -8,7 +9,10 @@
 class Robot
 {
     friend class WorldMap;
+    friend class BallTracker;
 private:
+    BallTracker ballTracker;
+    cv::Point2f ball_velocity;
     cv::Point2f world2image(const cv::Point2f& coord);
     cv::Point2f image2world(const cv::Point2f& coord);
     bool radar; // 1 when radar is on, 0 otherwise
@@ -22,8 +26,8 @@ private:
     cv::Point2f ownGoal_frontDir;
     float ownGoal_width;
     WorldMap worldMap;
-    void getImage(); // get a new image and store it in *image
-    bool locateBall(); // locate ball_coord according to *image
+    void getImage(); // get a new image and store it in *image_l and *image_r
+    bool locateBall(); // locate ball_coord according to *image_r
     bool locateOwnGate();
     void updateRadar();
     bool getBallInfo(cv::Point2f &ballVelocity,cv::Point2f &ballPosition);

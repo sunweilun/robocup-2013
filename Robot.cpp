@@ -221,6 +221,9 @@ void Robot::keepGoal()
     {
         cv::Point2f ballVelocity,ballPosition;
         getBallInfo(ballVelocity,ballPosition);
+        ball_velocity=ballVelocity;
+        ball_coord=ballPosition;
+        updateRadar();
         if(length(ballVelocity)<MIN_BALL_SPEED_TO_KEEP || ballVelocity.dot(ownGoal_frontDir)/length(ballVelocity)>-0.1)
             continue;
         float ball2goal_time = getTime(ballPosition,ballVelocity,ownGoal_coord,keeper_dir);
@@ -244,6 +247,19 @@ void Robot::keepGoal()
 bool Robot::getBallInfo(cv::Point2f &ballVelocity,cv::Point2f &ballPosition)
 {
     // to be done by zc
+    struct timespec ts,te;
+    getImage();
+    clock_gettime(CLOCK_REALTIME,&ts);
+    ballTracker.pushFrame(image_l,0);
+    getImage();
+    clock_gettime(CLOCK_REALTIME,&te);
+    ballTracker.pushFrame(image_l,float(te.tv_nsec-ts.tv_nsec)/(1e9));
+    ballTracker.processFrame(1);
+    ballPosition.x=ballTracker.pos[1].x;
+    ballPosition.y=ballTracker.pos[1].y;
+    ballVelocity.x=(ballTracker.pos[1].x-ballTracker.pos[0].x)/(ballTracker.pos[1].z-ballTracker.pos[0].z);
+    ballVelocity.y=(ballTracker.pos[1].y-ballTracker.pos[0].y)/(ballTracker.pos[1].z-ballTracker.pos[0].z);
+    ballTracker.popFrame(2);
     return true;
 }
 
@@ -300,7 +316,7 @@ void Robot::spin() {//}std::vector<cv::Point2f> balls) {
     //get them by some means of find balls
     float rspin =  cal_distance(ball1, ball2) / 2;
     if (rspin < ROBOT_RADIUS +BALL_RADIUS +DELTA_RADIUS) {
-        std::cout << "here!" << std::endl;
+//        std::cout << "here!" << std::endl;
         return;
     }
     float disr1 =  cal_distance(ball1, robot_coord);
@@ -337,6 +353,8 @@ void Robot::updateRadar()
     int y = (MAP_LEN>>1)+1-this->y;
     cv::Point2f ownGoal_coord = world2image(this->ownGoal_coord);
     cv::Point2f ball_coord = world2image(this->ball_coord);
+    cv::Point2f ball_velocity = world2image(this->ball_velocity);
+
 
     if(shootRoute.size()>1)
     {
@@ -351,7 +369,10 @@ void Robot::updateRadar()
     cvCircle(wMap,cvPoint(x,y),ROBOT_RADIUS,CV_RGB(0,0,0),-1);
     cvLine(wMap,cvPoint(x,y),cvPoint(x+ROBOT_RADIUS*sin(ori),y-ROBOT_RADIUS*cos(ori)),CV_RGB(255,255,0),3);
     if(ballLocated)
+    {
         cvCircle(wMap,cvPoint(ball_coord.x,ball_coord.y),BALL_RADIUS,CV_RGB(255,0,0),-1);
+        cvLine(wMap,cvPoint(ball_coord.x,ball_coord.y),cvPoint(ball_coord.x+ball_velocity.x,ball_coord.y+ball_velocity.y),CV_RGB(0,255,255),2);
+    }
     if(ownGoalLocated)
         cvCircle(wMap,cvPoint(ownGoal_coord.x,ownGoal_coord.y),5,CV_RGB(0,0,255),-1);
     cvShowImage(RADAR_WND_NAME,wMap);
@@ -395,7 +416,7 @@ std::vector<cv::Point2f> Robot::findMulBall()
             return ans;
         ip.setBound(BALL_BOUND);
         std::vector<cv::Point3f> tmp = ip.extractCircles(image_r);
-        std::cout << "tmp size: " << tmp.size() << std::endl;
+//        std::cout << "tmp size: " << tmp.size() << std::endl;
         if (tmp.size() <= 0) {
             turnRight(FIND_BALL_ANGLE);
             getImage();
@@ -414,7 +435,7 @@ std::vector<cv::Point2f> Robot::findMulBall()
         }
         if (ans.size() == 1) {
             if (abs(ball_coord_sub.x - ans[0].x) <= 10 && abs(ball_coord_sub.y - ans[0].y) <= 10) {
-                std::cout << "find the same ball!" << std::endl;
+//                std::cout << "find the same ball!" << std::endl;
                 turnRight(FIND_BALL_ANGLE);
                 getImage();
                 continue;
@@ -423,7 +444,7 @@ std::vector<cv::Point2f> Robot::findMulBall()
         ans.push_back(ball_coord_sub);
         if (ans.size() > 1)
             break;
-        cout << "ans size: " << ans.size() << std::endl;
+//        cout << "ans size: " << ans.size() << std::endl;
         turnRight(FIND_BALL_ANGLE);
         getImage();
     }
