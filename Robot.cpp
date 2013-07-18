@@ -287,13 +287,14 @@ void Robot::shoot()
     updateRadar();
 }
 
-void Robot::spin(){//}std::vector<cv::Point2f> balls) {
+void Robot::spin() {//}std::vector<cv::Point2f> balls) {
     cv::Point2f robot_coord(x, y);
     //printf("find %d balls\n", balls.size());
     //if (balls.size() < 2)
      //   return;
-    cv::Point2f ball1(0, 0);// = balls[0];
-    cv::Point2f ball2(0,100);// = balls[1];
+    std::vector<cv::Point2f> ans = findMulBall();
+    cv::Point2f ball1 = ans[0];// = balls[0];
+    cv::Point2f ball2 = ans[1];// = balls[1];
     printf("%f %f\n %f %f\n", ball1.x, ball1.y, ball2.x, ball2.y);
     //get them by some means of find balls
     float rspin =  cal_distance(ball1, ball2) / 2;
@@ -385,34 +386,33 @@ std::vector<cv::Point2f> Robot::findMulBall()
 {
     getImage();
     std::vector<cv::Point2f> ans;
-    std::vector<cv::Point3f> tmp;
+    // std::vector<cv::Point3f> tmp;
     while (true) {
         if (!image_r)
             return ans;
         ip.setBound(BALL_BOUND);
-        ip.extractMulCircles(image_r, tmp);
+        std::vector<cv::Point3f> tmp = ip.extractCircles(image_r);
         if (tmp.size() <= 0) {
             goto label;
         }
-        for (int i = 0; i != tmp.size(); ++i) {
-            cv::Point2f rCoord;
-            rCoord = worldMap.coord_screen2robot(cv::Point2f(tmp[i].x, tmp[i].y + tmp[i].z));
-            cv::Point2f ball_coord_sub = worldMap.coord_robot2world(rCoord);
-            CvRect bbox = worldMap.getMap_bbox();
-            cv::Point2f ball_coord_img = world2image(ball_coord_sub);
-            if (ball_coord_img.x >= bbox.x && ball_coord_img.x <= bbox.x + bbox.width &&
-                ball_coord_img.y >= bbox.y && ball_coord_img.y <= bbox.y + bbox.height) {
+        cv::Point2f rCoord;
+        rCoord = worldMap.coord_screen2robot(cv::Point2f(tmp[0].x, tmp[0].y + tmp[0].z));
+        cv::Point2f ball_coord_sub = worldMap.coord_robot2world(rCoord);
+        CvRect bbox = worldMap.getMap_bbox();
+        cv::Point2f ball_coord_img = world2image(ball_coord_sub);
+        if (ball_coord_img.x >= bbox.x && ball_coord_img.x <= bbox.x + bbox.width &&
+            ball_coord_img.y >= bbox.y && ball_coord_img.y <= bbox.y + bbox.height) {
+            goto label;
+        }
+        if (ans.size() == 1) {
+            if (abs(ball_coord_sub.x - ans[0].x) <= 10 && abs(ball_coord_sub.y - ans[0].y) <= 10) {
+                std::cout << "find the same ball!" << std::endl;
                 goto label;
             }
-            if (ans.size() == 1) {
-                if (abs(ball_coord_sub.x - ans[0].x) <= 10 && abs(ball_coord_sub.y - ans[0].y) <= 10) {
-                    goto label;
-                }
-            }
-            ans.push_back(ball_coord_sub);
-            if (ans.size() > 1)
-                break;
         }
+        ans.push_back(ball_coord_sub);
+        if (ans.size() > 1)
+            break;
         label:
         turnRight(FIND_BALL_ANGLE);
         getImage();

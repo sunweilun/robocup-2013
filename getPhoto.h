@@ -98,8 +98,7 @@ static void getPhoto() {
 			sprintf(dataName, "./data/%d_r.dat", photoCnt++);
 		FILE* p = fopen(dataName, "w");
 		fprintf(p, "%d %d\n", 320, 240);
-		long k;
-		for (k = 0; k < rgbbuffersize; k += 3)
+		for (long k = 0; k < rgbbuffersize; k += 3)
 			fprintf(p, "%.2x %.2x %.2x\n", rgbbuffer[k], rgbbuffer[k + 1], rgbbuffer[k + 2]);
 		fclose(p);
 	}
