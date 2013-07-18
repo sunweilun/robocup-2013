@@ -354,7 +354,7 @@ void ImageProcessor::extractMulCircles(const IplImage* image, std::vector<cv::Po
         }//for c
         std::cout <<balls.size() << std::endl;
         //cout << "ball.size: " << balls.size() << endl;
-        if(balls.size() > 0){
+        if(balls.size() > 0) {
             foundBall =  true;
             int res_c = -1;
             int res_r = 0, res_x = 0, res_y = 0;
@@ -437,8 +437,8 @@ std::vector<cv::Point3f> ImageProcessor::extractCircles(const IplImage* image)
                 balls.push_back(c);
             }
         }//for c
-        //cout << "ball.size: " << balls.size() << endl;
-        if(balls.size() > 0){
+        std::cout << "ball.size: " << balls.size() << std::endl;
+        if(balls.size() > 0) {
             foundBall =  true;
             int res_c = -1;
             int res_r = 0, res_x = 0, res_y = 0;

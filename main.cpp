@@ -19,11 +19,7 @@ int main()
     //robot.shoot();
     robot.radarOff();
     */
-        std::vector<cv::Point2f> ans = robot.findMulBall();
-        //printf("1\n");
-        for (int i = 0; i != ans.size(); ++i)
-            printf("x = %f, y = %f\n", ans[i].x, ans[i].y);
-        //robot.spin();
+    robot.spin();
 #endif
 
 #if CALIBTEST
