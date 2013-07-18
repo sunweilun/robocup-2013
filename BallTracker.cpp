@@ -40,7 +40,7 @@ int BallTracker::popFrame(int numOfFrame)
 void BallTracker::scr2wld(int frameId)
 {
     cv::Point2f scrPos(pos_scr[frameId].x,pos_scr[frameId].y-pos_scr[frameId].z);
-	cv::Point2f roboPos=robot->worldMap.coord_screen2robot(scrPos);
+	cv::Point2f roboPos=robot->worldMap.coord_screen2robot(scrPos,false);
 	cv::Point2f worldPos=robot->worldMap.coord_robot2world(roboPos);
 	pos[frameId].x=worldPos.x;
 	pos[frameId].y=worldPos.y;

@@ -10,7 +10,8 @@
 
 #define DATA_PATH "/home/csai123/桌面/RoboCup/data/"
 //!!!#define CAM_PARMS_PATH "/home/csai123/robocup-test/calib/left-right"
-#define CAM_PARMS_PATH "/home/csai123/桌面/RoboCup/cam_parms"
+#define CAM_PARMS_PATH_RIGHT "/home/csai123/桌面/RoboCup/cam_parms_right"
+#define CAM_PARMS_PATH_LEFT "/home/csai123/桌面/RoboCup/cam_parms_left"
 
 #define INVAlID_CAM_HEIGHT 50
 

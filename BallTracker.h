@@ -9,8 +9,10 @@ using namespace std;
 
 class Robot;
 
-//CvScalar BALL_COLOR_HSV = cvScalar(270,0.52,0.5);
-//const double rg[3]={20,0.2,0.3};
+static int width = 320;
+static int height = 240;
+static CvScalar BALL_COLOR_HSV = cvScalar(270,0.52,0.5);
+const double rg[3]={20,0.2,0.3};
 
 int checkColorThreshold(float* c);
 

@@ -11,19 +11,21 @@ int main()
 {
 #if ROBOTTEST
     Robot robot;
-    /*robot.radarOn();
+    robot.radarOn();
     robot.drawMap();
-    robot.findBall();
-    robot.shoot();
+    robot.keepGoal();
     //robot.findBall();
     //robot.shoot();
-    robot.radarOff();
-    */
+    //robot.findBall();
+    //robot.shoot();
     robot.spin();
+    //robot.radarOff();
+
+
 #endif
 
 #if CALIBTEST
-    calib();
+    calib(false);//@parm:isRight
 #endif
 
 #if BALLTEST

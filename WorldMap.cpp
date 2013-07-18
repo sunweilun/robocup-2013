@@ -15,11 +15,19 @@ IplImage* WorldMap::getMap()
 
 
 
-void WorldMap::loadCamParms(const char* fileName)
+void WorldMap::loadCamParms_l(const char* fileName)
 {
     FILE* file = fopen(fileName,"r");
     for(int i=0;i<8;i++)
-        fscanf(file,"%f\n",&camParms[i]);
+        fscanf(file,"%f\n",&camParms_l[i]);
+    fclose(file);
+}
+
+void WorldMap::loadCamParms_r(const char* fileName)
+{
+    FILE* file = fopen(fileName,"r");
+    for(int i=0;i<8;i++)
+        fscanf(file,"%f\n",&camParms_r[i]);
     fclose(file);
 }
 
@@ -28,19 +36,34 @@ void WorldMap::setParent(Robot* robot)
     this->robot = robot;
 }
 
-cv::Point2f WorldMap::coord_robot2screen(const cv::Point2f& rCoord)
+cv::Point2f WorldMap::coord_robot2screen(const cv::Point2f& rCoord, bool isRight)
 {
-    cv::Point2f sCoord;
-    float p1, p2, p3, p4, q1, q2;
-    p1 = rCoord.x * camParms[6] - camParms[0];
-    p2 = rCoord.x * camParms[7] - camParms[1];
-    p3 = rCoord.y * camParms[6] - camParms[3];
-    p4 = rCoord.y * camParms[7] - camParms[4];
-    q1 = camParms[2] - rCoord.x;
-    q2 = camParms[5] - rCoord.y;
-    sCoord.y = (q2*p1-q1*p3)/(p1*p4-p2*p3);
-    sCoord.x = (q1-p2*sCoord.y)/p1;
-    return sCoord;
+    if(isRight) {
+        cv::Point2f sCoord;
+        float p1, p2, p3, p4, q1, q2;
+        p1 = rCoord.x * camParms_r[6] - camParms_r[0];
+        p2 = rCoord.x * camParms_r[7] - camParms_r[1];
+        p3 = rCoord.y * camParms_r[6] - camParms_r[3];
+        p4 = rCoord.y * camParms_r[7] - camParms_r[4];
+        q1 = camParms_r[2] - rCoord.x;
+        q2 = camParms_r[5] - rCoord.y;
+        sCoord.y = (q2*p1-q1*p3)/(p1*p4-p2*p3);
+        sCoord.x = (q1-p2*sCoord.y)/p1;
+        return sCoord;
+    }
+    else {
+        cv::Point2f sCoord;
+        float p1, p2, p3, p4, q1, q2;
+        p1 = rCoord.x * camParms_l[6] - camParms_l[0];
+        p2 = rCoord.x * camParms_l[7] - camParms_l[1];
+        p3 = rCoord.y * camParms_l[6] - camParms_l[3];
+        p4 = rCoord.y * camParms_l[7] - camParms_l[4];
+        q1 = camParms_l[2] - rCoord.x;
+        q2 = camParms_l[5] - rCoord.y;
+        sCoord.y = (q2*p1-q1*p3)/(p1*p4-p2*p3);
+        sCoord.x = (q1-p2*sCoord.y)/p1;
+        return sCoord;
+    }
 }
 
 CvRect WorldMap::getMap_bbox()
@@ -65,14 +88,24 @@ CvRect WorldMap::getMap_bbox()
     return cvRect(xmin,ymin,xmax-xmin,ymax-ymin);
 }
 
-cv::Point2f WorldMap::coord_screen2robot(const cv::Point2f& sCoord)
+cv::Point2f WorldMap::coord_screen2robot(const cv::Point2f& sCoord, bool isRight)
 {
-    cv::Point2f rCoord;
-    rCoord.x = (camParms[0] * sCoord.x + camParms[1] * sCoord.y + camParms[2]) /
-     (camParms[6] * sCoord.x + camParms[7] * sCoord.y + 1);
-    rCoord.y = (camParms[3] * sCoord.x + camParms[4] * sCoord.y + camParms[5]) /
-     (camParms[6] * sCoord.x + camParms[7] * sCoord.y + 1);
-    return rCoord;
+    if (isRight) {
+        cv::Point2f rCoord;
+        rCoord.x = (camParms_r[0] * sCoord.x + camParms_r[1] * sCoord.y + camParms_r[2]) /
+         (camParms_r[6] * sCoord.x + camParms_r[7] * sCoord.y + 1);
+        rCoord.y = (camParms_r[3] * sCoord.x + camParms_r[4] * sCoord.y + camParms_r[5]) /
+         (camParms_r[6] * sCoord.x + camParms_r[7] * sCoord.y + 1);
+        return rCoord;
+    }
+    else {
+        cv::Point2f rCoord;
+        rCoord.x = (camParms_l[0] * sCoord.x + camParms_l[1] * sCoord.y + camParms_l[2]) /
+         (camParms_l[6] * sCoord.x + camParms_l[7] * sCoord.y + 1);
+        rCoord.y = (camParms_l[3] * sCoord.x + camParms_l[4] * sCoord.y + camParms_l[5]) /
+         (camParms_l[6] * sCoord.x + camParms_l[7] * sCoord.y + 1);
+        return rCoord;
+    }
 }
 
 

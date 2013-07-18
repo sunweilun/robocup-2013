@@ -23,10 +23,6 @@ static int size = 0;
 static unsigned char raw_buf1[MAX_MJPEG_SIZE];
 static unsigned char raw_buf2[MAX_MJPEG_SIZE];
 
-static void* videoCapInit(void* arg) {
-	execl("./videocap", "videocap", (void*)0);
-}
-
 static void* myInit(void* arg) {
 	pthread_mutex_init(&ca_mutex, NULL);
 	//raw_buff = raw_buff1;
@@ -54,11 +50,9 @@ static void* myInit(void* arg) {
 }
 
 static void ptInit() {
-    pthread_t pt, vdcp;
+    pthread_t pt;
     pthread_create(&pt, NULL, myInit, NULL);
     usleep(2000);
-    pthread_create(&vdcp, NULL, videoCapInit, NULL);
-    usleep(2000000);
 }
 
 static void ptEnd() {

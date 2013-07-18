@@ -35,10 +35,13 @@ void mouse_cb(int event,int x,int y,int flags,void* param)
 
 //*************Calculate TransMatrix Start****************
 
-void PrintMat(CvMat *A)
+void PrintMat(CvMat *A, bool isRight)
 {
-FILE* file = fopen(CAM_PARMS_PATH,"w");
-
+    FILE* file = NULL;
+    if (isRight)
+        file = fopen(CAM_PARMS_PATH_RIGHT,"w");
+    else
+        file = fopen(CAM_PARMS_PATH_LEFT,"w");
 
 	int i, j;
 	for(i = 0; i < A->rows; i++)
@@ -70,7 +73,7 @@ FILE* file = fopen(CAM_PARMS_PATH,"w");
 
 void MakeMatViaRes(CvMat *MatA, CvMat *MatB, CvPoint *ImagPosition, CvPoint *RealPosition, int points)
 {
-	int i, j;
+	int i;
 	double points_u[MAX_POINTS];
 	double points_y[MAX_POINTS];
 	double points_x[MAX_POINTS];
@@ -127,7 +130,7 @@ void CalTransMat(CvMat *TranMat, int points, CvPoint *ImagPosition, CvPoint *Rea
 }
 //***************Calculate TransMatrixEnd****************
 
-void calib()
+void calib(bool isRight)
 {
     CvPoint sc[100],rc[100];
     int np = 0;
@@ -138,7 +141,10 @@ void calib()
     printf("out\n");
     char dp[] = DATA_PATH;
     char fn[1024];
-    sprintf(fn,"%s0.dat",dp);
+    if (isRight)
+        sprintf(fn,"%s0_r.dat",dp);
+    else
+        sprintf(fn,"%s0_l.dat",dp);
     IplImage* image = loadDatImage(fn);
     void* ptrs[5];
     ptrs[0] = (void*) sc;
@@ -159,5 +165,5 @@ void calib()
 
     CalTransMat(Tran_Mat, np, sc, rc);
     printf("Transform Matrix:");
-    PrintMat(Tran_Mat);
+    PrintMat(Tran_Mat, isRight);
 }

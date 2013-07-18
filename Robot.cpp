@@ -9,7 +9,8 @@ Robot::Robot()
     ptInit();
     motor_init();
     imgCounter = 0;
-    worldMap.loadCamParms(CAM_PARMS_PATH);
+    worldMap.loadCamParms_l(CAM_PARMS_PATH_LEFT);
+    worldMap.loadCamParms_r(CAM_PARMS_PATH_RIGHT);
     image_l = NULL;
     image_r = NULL;
     ballLocated = false;
@@ -134,7 +135,7 @@ void Robot::moveForward(float dist,float max_speed)
     updateRadar();
 }
 
-void Robot::moveRotate(bool isLeft, float radius, float arc)
+void Robot::moveRotate(bool isLeft, int radius, float arc)
 {
     if (isLeft)
     {
@@ -153,11 +154,9 @@ void Robot::moveRotate(bool isLeft, float radius, float arc)
         ori -= arc;
         ori = ori<0?ori+2*M_PI:(ori>2*M_PI?ori-2*M_PI:ori);
 
-        float rinner = radius - DIST_BETWEEN_WHEELS / 2;
-        float rout = radius + DIST_BETWEEN_WHEELS / 2;
-        float t = (arc) * rout / 20;
-        int vin = 20 * rinner / rout;
-        goWithSpeed(vin, 20, t);
+        float rinner = radius - 15;
+        float rout = radius + 15;
+        goWithSpeed(rinner / 2, rout / 2, arc * 2);
     }
     else  //turn right
     {
@@ -177,12 +176,11 @@ void Robot::moveRotate(bool isLeft, float radius, float arc)
         ori = ori<0?ori+2*M_PI:(ori>2*M_PI?ori-2*M_PI:ori);
 
 
-        float rinner = radius - DIST_BETWEEN_WHEELS / 2;
-        float rout = radius + DIST_BETWEEN_WHEELS / 2;
-        float t = (arc) * rout / 20;
-        int vin = 20 * rinner / rout;
-        goWithSpeed(20, vin, t);
+        float rinner = radius  - 15;
+        float rout = radius + 15;
+        goWithSpeed(rout / 2, rinner / 2, arc * 2);
     }
+
 }
 
 
@@ -315,32 +313,36 @@ void Robot::spin() {//}std::vector<cv::Point2f> balls) {
     printf("%f %f\n %f %f\n", ball1.x, ball1.y, ball2.x, ball2.y);
     //get them by some means of find balls
     float rspin =  cal_distance(ball1, ball2) / 2;
-    if (rspin < ROBOT_RADIUS +BALL_RADIUS +DELTA_RADIUS) {
-//        std::cout << "here!" << std::endl;
+    float disr1 =  cal_distance(ball1, robot_coord);
+    int  inrspin = 0;
+    while(inrspin < rspin)
+        inrspin++;
+    printf("rspin:%f, disr1:%f, inrspin:%d\n", rspin, disr1, inrspin);
+    if (rspin <= DIST_BETWEEN_WHEELS / 2) {
+        std::cout << "here!" << std::endl;
         return;
     }
-    float disr1 =  cal_distance(ball1, robot_coord);
-    //printf("%f, %f\n", rspin, disr1);
     cv::Point2f a = ball1 - robot_coord;
     cv::Point2f b = ball2 - ball1;
+
     float arc = M_PI - acos((a.x *b.x + a.y * b.y) / (2 *rspin * disr1));
     float turn = a.x * b.y - a.y * b.x;
-    printf("%f, %f\n", a.x, a.y);
+    //printf("a.x:%f, a.y:%f\n", a.x, a.y);
     //cvWaitKey();
     cv::Point2f pturn(x + 0.01 *a.x, y + 0.01*a.y);
     moveTo(pturn, 5);
-    moveForward(disr1 * 0.99 - rspin, 20);
+    moveForward(disr1 * 0.99 - inrspin, 20);
     if (turn > 0) {
         turnRight(90);
-        moveRotate(true, rspin, 2 * M_PI - arc);
-        usleep(10000);
-        moveRotate(false, rspin, M_PI);
+        moveRotate(true, inrspin, 2 * M_PI - arc);
+        usleep(5000000);
+        moveRotate(false, inrspin, M_PI);
     }
     else {
         turnLeft(90);
-        moveRotate(false, rspin, 2 * M_PI - arc);
-        usleep(10000);
-        moveRotate(true, rspin, M_PI);
+        moveRotate(false, inrspin, 2 * M_PI - arc);
+        usleep(5000000);
+        moveRotate(true, inrspin, M_PI);
     }
 }
 
@@ -490,9 +492,9 @@ bool Robot::locateOwnGate()
             }
         }
     }
-    cvReleaseImage(&wMap);
     if(n < 10)
     {
+        cvReleaseImage(&wMap);
         return false;
     }
     else
@@ -541,12 +543,15 @@ bool Robot::locateOwnGate()
         cv::Point2f goalWidthDir = end1-end2;
         ownGoal_width = length(goalWidthDir);
         ownGoal_frontDir = cv::Point2f(-goalWidthDir.y,goalWidthDir.x);
-        ownGoal_frontDir = image2world(ownGoal_frontDir)*(1/length(ownGoal_frontDir));
+        ownGoal_frontDir = ownGoal_frontDir*(1/length(ownGoal_frontDir));
+        ownGoal_frontDir.y = -ownGoal_frontDir.y;
+        printf("goalFront = %f,%f\n",ownGoal_frontDir.x,ownGoal_frontDir.y);
         cv::Point2f robot_coord(x,y);
         if(ownGoal_frontDir.dot(robot_coord - ownGoal_coord)<0)
         {
             ownGoal_frontDir = -ownGoal_frontDir;
         }
+        cvReleaseImage(&wMap);
         return true;
     }
 }
