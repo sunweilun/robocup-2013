@@ -23,12 +23,8 @@ static int size = 0;
 static unsigned char raw_buf1[MAX_MJPEG_SIZE];
 static unsigned char raw_buf2[MAX_MJPEG_SIZE];
 
-static void* myInit(void* arg);
-
-static void ptInit() {
-    pthread_t pt;
-    pthread_create(&pt, NULL, myInit, NULL);
-    usleep(2000);
+static void* videoCapInit(void* arg) {
+	execl("./videocap", "videocap", (void*)0);
 }
 
 static void* myInit(void* arg) {
@@ -57,6 +53,14 @@ static void* myInit(void* arg) {
     }
 }
 
+static void ptInit() {
+    pthread_t pt, vdcp;
+    pthread_create(&pt, NULL, myInit, NULL);
+    usleep(2000);
+    pthread_create(&vdcp, NULL, videoCapInit, NULL);
+    usleep(2000000);
+}
+
 static void ptEnd() {
     net_close(&(nst[0]));
 	net_close(&(nst[1]));
@@ -76,11 +80,10 @@ static void getPhoto() {
     //printf("2\n");
 	usleep(2000);
 
+	struct jpeg_decompress_struct* jpeg_decompressor = newDecompressor ( MAX_NET_WIDTH );
+	long rgbbuffersize = MAX_NET_WIDTH * MAX_NET_HEIGHT * 3;
+	unsigned char rgbbuffer[rgbbuffersize];
 	for (int i = 0; i != 2; ++i) {
-		struct jpeg_decompress_struct* jpeg_decompressor = newDecompressor ( MAX_NET_WIDTH );
-		long rgbbuffersize = MAX_NET_WIDTH * MAX_NET_HEIGHT * 3;
-		unsigned char rgbbuffer[rgbbuffersize];
-
 		if (read_JPEG_buffer(jpeg_decompressor, tmpbuf[i], gsize, rgbbuffer, rgbbuffersize, NULL, 0) != 1) {
 			fprintf(stderr, "\nerror while decoding jpeg files.\n");
 			if (isfatalerror()) {

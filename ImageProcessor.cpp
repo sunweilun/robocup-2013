@@ -307,89 +307,6 @@ IplImage* ImageProcessor::extractColorBlocks(const IplImage* hsv_img)
     return cb;
 }
 
-void ImageProcessor::extractMulCircles(const IplImage* image, std::vector<cv::Point3f>& res)
-{
-    IplImage* cpyImage = cvCreateImage(cvGetSize(image), IPL_DEPTH_8U, 3);
-    memcpy(cpyImage->imageData, image->imageData, 3*image->width*image->height);
-
-    IplImage* gray = cvCreateImage(cvGetSize(image), IPL_DEPTH_8U, 1);
-    cvCvtColor(image, gray, CV_BGR2GRAY);
-    cvSmooth(gray, gray, CV_GAUSSIAN, 3, 3);
-    CvMemStorage* storage = cvCreateMemStorage();
-    double minCircleGap = gray->height/10;
-    CvSeq* seqCircles = cvHoughCircles(gray, storage, CV_HOUGH_GRADIENT, 2, minCircleGap, 200, 50, 10, 150);
-    int circleNum = seqCircles->total;
-    bool foundBall = false;
-    int xx = 0, yy = 0, rr = 0;
-    if (circleNum > 0) {
-        vector<int> balls;
-        IplImage* image_hsv = cvCreateImage(cvGetSize(image),IPL_DEPTH_32F,3);
-        cvConvertScale(image,image_hsv,1/255.0);
-        cvCvtColor(image_hsv,image_hsv,CV_BGR2HSV);
-        float* image_hsv_data = (float *)image_hsv->imageData;
-
-        for (int c = 0; c < seqCircles->total; c++) {
-            float* p = (float*)cvGetSeqElem(seqCircles, c);
-            int x = cvRound(p[0]), y = cvRound(p[1]), r = cvRound(p[2]);
-            int ballPixNum = 0, totalPixNum = 0;
-            for (int i = y-r; i <= y+r; i++) {
-                for (int j = x-r; j <= x+r; j++) {
-                    if ((i>=0 && i <image->height && j>=0 && j<image->width) &&
-                       ((i-y)*(i-y)+(j-x)*(j-x) <= r*r)) {
-                        totalPixNum++;
-                        float h = image_hsv_data[i*image->width*3+j*3+0];
-                        float s = image_hsv_data[i*image->width*3+j*3+1];
-                        float v = image_hsv_data[i*image->width*3+j*3+2];
-                        if (inBound(h, s, v)){
-                            ballPixNum++;
-                        }
-                    }
-                }//for j
-            }//for i
-            float tmpRatio = (float)ballPixNum/totalPixNum;
-            //cout << tmpRatio << endl;
-            if (tmpRatio > 0.35) {
-                balls.push_back(c);
-            }
-        }//for c
-        std::cout <<balls.size() << std::endl;
-        //cout << "ball.size: " << balls.size() << endl;
-        if(balls.size() > 0) {
-            foundBall =  true;
-            int res_c = -1;
-            int res_r = 0, res_x = 0, res_y = 0;
-            for(int i = 0; i < balls.size(); i++) {
-                int c = balls.at(i);
-                float* p = (float*)cvGetSeqElem(seqCircles, c);
-                int x = cvRound(p[0]), y = cvRound(p[1]), r = cvRound(p[2]);
-                if(r > res_r){
-                    res_r = r;
-                    res_x = x;
-                    res_y = y;
-                    res_c = c;
-                }
-            }
-            float* pp = (float*)cvGetSeqElem(seqCircles, res_c);
-            xx = cvRound(pp[0]); yy = cvRound(pp[1]); rr = cvRound(pp[2]);
-            res.push_back(cv::Point3f(xx,yy,rr));
-        }//if balls.size()
-        cvReleaseImage(&image_hsv);
-    }
-    cvReleaseMemStorage(&storage);
-    cvReleaseImage(&gray);
-    #if BALL_DEBUG
-    for (int i = 0; i != tmpv.size(); ++i) {
-        cvCircle(cpyImage, cvPoint(tmpv[i].x, tmpv[i].y), tmpv[i].z, CV_RGB(255, 255, 0), 2);
-    }
-    cvNamedWindow("ball_detect", CV_WINDOW_AUTOSIZE);
-    cvMoveWindow("ball_detect", 512, 0);
-    cvShowImage("ball_detect", cpyImage);
-    cvWaitKey(0);
-    cvReleaseImage(&cpyImage);
-    #endif
-
-}
-
 std::vector<cv::Point3f> ImageProcessor::extractCircles(const IplImage* image)
 {
     vector<cv::Point3f> circle_vct;
@@ -437,7 +354,7 @@ std::vector<cv::Point3f> ImageProcessor::extractCircles(const IplImage* image)
                 balls.push_back(c);
             }
         }//for c
-        std::cout << "ball.size: " << balls.size() << std::endl;
+        //std::cout << "ball.size: " << balls.size() << std::endl;
         if(balls.size() > 0) {
             foundBall =  true;
             int res_c = -1;
