@@ -32,6 +32,11 @@ cv::Point2f Robot::world2image(const cv::Point2f& coord)
     return cv::Point2f(coord.x+(MAP_LEN>>1),(MAP_LEN>>1)+1-coord.y);
 }
 
+cv::Point2f Robot::image2world(const cv::Point2f& coord)
+{
+    return cv::Point2f(coord.x-(MAP_LEN>>1),(MAP_LEN>>1)+1-coord.y);
+}
+
 void Robot::radarOff()
 {
     radar = false;
@@ -466,6 +471,51 @@ bool Robot::locateOwnGate()
         ownGoal_coord.x = center_x - (MAP_LEN>>1);
         ownGoal_coord.y = (MAP_LEN>>1)+1-center_y;
         ownGoalLocated = true;
+
+        cv::Point2f end1,end2,center(center_x,center_y);
+        float dist_max = 0;
+        for(int i = 0; i < MAP_LEN; i++)
+        {
+            for(int j = 0; j < MAP_LEN; j++)
+            {
+                int b = wMap_data[i*MAP_LEN*3+j*3+0];
+                int g = wMap_data[i*MAP_LEN*3+j*3+1];
+                int r = wMap_data[i*MAP_LEN*3+j*3+2];
+                cv::Point2f p(j,i);
+                float dist = length(center-p);
+                if(b == 255 && g==0 && r==0 && dist>dist_max)
+                {
+                    dist_max = dist;
+                    end1 = p;
+                }
+            }
+        }
+        dist_max = 0;
+        for(int i = 0; i < MAP_LEN; i++)
+        {
+            for(int j = 0; j < MAP_LEN; j++)
+            {
+                int b = wMap_data[i*MAP_LEN*3+j*3+0];
+                int g = wMap_data[i*MAP_LEN*3+j*3+1];
+                int r = wMap_data[i*MAP_LEN*3+j*3+2];
+                cv::Point2f p(j,i);
+                float dist = length(center-p);
+                if(b == 255 && g==0 && r==0 && dist>dist_max && (p-center).dot(end1-center)<0)
+                {
+                    dist_max = dist;
+                    end2 = p;
+                }
+            }
+        }
+        cv::Point2f goalWidthDir = end1-end2;
+        ownGoal_width = length(goalWidthDir);
+        ownGoal_frontDir = cv::Point2f(-goalWidthDir.y,goalWidthDir.x);
+        ownGoal_frontDir = image2world(ownGoal_frontDir)*(1/length(ownGoal_frontDir));
+        cv::Point2f robot_coord(x,y);
+        if(ownGoal_frontDir.dot(robot_coord - ownGoal_coord)<0)
+        {
+            ownGoal_frontDir = -ownGoal_frontDir;
+        }
         return true;
     }
 }

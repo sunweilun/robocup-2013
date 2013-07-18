@@ -10,6 +10,7 @@ class Robot
     friend class WorldMap;
 private:
     cv::Point2f world2image(const cv::Point2f& coord);
+    cv::Point2f image2world(const cv::Point2f& coord);
     bool radar; // 1 when radar is on, 0 otherwise
     bool ballLocated,ownGoalLocated,oppGoalLocated;
     ImageProcessor ip;
