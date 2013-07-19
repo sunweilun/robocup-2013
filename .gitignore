@@ -12,3 +12,4 @@ obj
 *.orig
 *.jpg
 videocap
+cam_*
