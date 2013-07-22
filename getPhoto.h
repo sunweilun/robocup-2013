@@ -22,6 +22,8 @@ static int photoCnt = 0;
 static int size = 0;
 static unsigned char raw_buf1[MAX_MJPEG_SIZE];
 static unsigned char raw_buf2[MAX_MJPEG_SIZE];
+//static unsigned char tempbuf[2][MAX_MJPEG_SIZE];
+//static IplImage *image_l, *image_r;
 
 static void* myInit(void* arg) {
 	pthread_mutex_init(&ca_mutex, NULL);
@@ -60,7 +62,7 @@ static void ptEnd() {
 	net_close(&(nst[1]));
 }
 
-static void getPhoto() {
+static void getPhoto(IplImage *image_l, IplImage *image_r) {
     //printf("1\n");
     usleep(2000);
 	int gsize = 0;
@@ -88,18 +90,34 @@ static void getPhoto() {
 			return;
 		}
 
-		char dataName[300];
-		if (i == 0)
-			sprintf(dataName, "./data/%d_l.dat", photoCnt);
-		else
-			sprintf(dataName, "./data/%d_r.dat", photoCnt++);
-		FILE* p = fopen(dataName, "w");
-		fprintf(p, "%d %d\n", 320, 240);
-		for (long k = 0; k < rgbbuffersize; k += 3)
-			fprintf(p, "%.2x %.2x %.2x\n", rgbbuffer[k], rgbbuffer[k + 1], rgbbuffer[k + 2]);
-		fclose(p);
+		//char dataName[300];
+		int width = 320, height = 240;
+		if (i == 0) {	//left
+			//sprintf(dataName, "./data/%d_l.dat", photoCnt);
+			image_l = cvCreateImage(cvSize(width,height),IPL_DEPTH_8U,3);
+			/*
+			int r,g,b;
+		    for (int i = 0; i < width * height; i++) {
+		        sprintf(image_l->imageData[3 * i], "%x", rgbbuffer[3 * i]);
+		        sprintf(image_l->imageData[3 * i + 1], "%x", rgbbuffer[3 * i + 1]);
+		        sprintf(image_l->imageData[3 * i + 2], "%x", rgbbuffer[3 * i + 2]);
+		    }
+		    */
+		    memcpy(image_l->imageData, rgbbuffer, rgbbuffersize);
+		} else {
+			image_r = cvCreateImage(cvSize(width,height),IPL_DEPTH_8U,3);
+			memcpy(image_r->imageData, rgbbuffer, rgbbuffersize);
+		}
+		//sprintf(dataName, "./data/%d_r.dat", photoCnt++);
+		//FILE* p = fopen(dataName, "w");
+		//fprintf(p, "%d %d\n", 320, 240);
+		//for (long k = 0; k < rgbbuffersize; k += 3)
+		//	sprintf(p, "%.2x %.2x %.2x\n", rgbbuffer[k], rgbbuffer[k + 1], rgbbuffer[k + 2]);
+		//fclose(p);
+		//memcpy(tempbuf[i], rgbbuffer, rgbbuffersize);
+		//image = cvCreateImage(cvSize(width,height),IPL_DEPTH_8U,3);
+	    
 	}
-
 }
 
 #endif

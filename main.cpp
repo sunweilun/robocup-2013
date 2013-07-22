@@ -1,6 +1,5 @@
 #include <stdio.h>
 #include "Robot.h"
-//#include "getPhoto.h"
 #include "calib.h"
 
 #define CALIBTEST 0

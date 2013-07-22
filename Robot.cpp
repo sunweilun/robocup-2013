@@ -112,7 +112,8 @@ void Robot::drawMap()
 void Robot::getImage()
 {
     usleep(SLEEPTIME_BEFORE_PHOTO); // sleep until the camera is still
-    getPhoto();
+    getPhoto(image_l, image_r);
+    /*
     char dp[] = DATA_PATH;
     char fn[1024];
     sprintf(fn,"%s%d_l.dat",dp,imgCounter);
@@ -124,7 +125,9 @@ void Robot::getImage()
     if(image_r)
         cvReleaseImage(&image_r);
     image_r = loadDatImage(fn);
-    imgCounter++;
+    */
+
+    //imgCounter++;
 }
 
 void Robot::moveForward(float dist,float max_speed)
@@ -470,7 +473,9 @@ Robot::~Robot()
         cvReleaseImage(&image_l);
     if(image_r)
         cvReleaseImage(&image_r);
+	ptEnd();
 }
+
 bool Robot::locateOwnGate()
 {
     IplImage* wMap = worldMap.getMap();
