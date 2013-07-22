@@ -102,6 +102,8 @@ int BallTracker::processFrame(int frameId)
 
 cv::Point3f BallTracker::ballDetect(const IplImage* image1)
 {
+	struct timespec ts,te;
+    clock_gettime(CLOCK_REALTIME,&ts);
     if(image1 == NULL)
         exit(1);
 	IplImage* tmp1=cvCreateImage(cvGetSize(image1),IPL_DEPTH_32F,3);
@@ -123,16 +125,18 @@ cv::Point3f BallTracker::ballDetect(const IplImage* image1)
 			++sum;
 		}
 	}
-	cvNamedWindow("tempImage1");
-	if(images.size()>1)
-        cvShowImage("tempImage1",bina);
-	cvWaitKey(10);
+//	cvNamedWindow("tempImage1");
+//	if(images.size()>1)
+ //      cvShowImage("tempImage1",bina);
+//	cvWaitKey(10);
 	char* b=bina->imageData;
 	int id[240*320];
 	memset(id,0,240*320*sizeof(int));
 	int newId=1;
+
 	deque<int> waitQueue;
 	vector<Area> areas;
+
 	for(int i=0;i<240;++i)
 	{
 		for(int j=0;j<320;++j)
@@ -217,6 +221,8 @@ cv::Point3f BallTracker::ballDetect(const IplImage* image1)
 		int mx=0;
 		for(int i=0;i<areas.size();++i)
 		{
+            if(areas[mx].area>=areas[i].area)
+                continue;
 		    cv::Point2f scrPos(areas[i].x,areas[i].y-(areas[mx].ymax-areas[mx].ymin)/2);
 		    cv::Point2f roboPos=robot->worldMap.coord_screen2robot(scrPos,false);
 		    cv::Point2f worldPos=robot->worldMap.coord_robot2world(roboPos);
@@ -228,13 +234,14 @@ cv::Point3f BallTracker::ballDetect(const IplImage* image1)
 		    //printf("areas[%d] out! imgPos=(%f,%f) bBox=(%d,%d)(%d,%d)\n",i,imgPos.x,imgPos.y,bBox.x,bBox.y,bBox.width,bBox.height);
                 continue;
                 }
-			if(areas[mx].area<areas[i].area)
-            {
+			{
             //printf("area[%d] cur max\n",i);
 				mx=i;
                 }
 		}
 		printf("best area found. mx=%d pos=(%f,%f) r=%f\n",mx,areas[mx].x,areas[mx].y,(areas[mx].ymax-areas[mx].ymin)/2.0);
+    clock_gettime(CLOCK_REALTIME,&te);
+    printf("!!!!!!!!!!! time = %f\n",double(te.tv_nsec-ts.tv_nsec)/(1e9));
 		return cv::Point3f(areas[mx].x,areas[mx].y,(areas[mx].ymax-areas[mx].ymin)/2);
 	}
 	return cv::Point3f(-1,-1,-1);

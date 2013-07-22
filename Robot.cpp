@@ -274,8 +274,8 @@ void Robot::keepGoal()
         clock_gettime(CLOCK_REALTIME,&te);
         float move_cost = float(te.tv_nsec-ts.tv_nsec)/(1e9);
         float sleepTime = EXTRA_WAIT_TIME+ball2keepline_time-move_cost;
-        if(sleepTime>0)
-            usleep(sleepTime*1e6);
+        //if(sleepTime>0)
+            //usleep(sleepTime*1e6);
         //moveForward(-fwd_dist,50);
     }
 }
@@ -300,7 +300,9 @@ bool Robot::getBallInfo(cv::Point2f &ballVelocity,cv::Point2f &ballPosition)
     ballTracker.pushFrame(image_l,float(te.tv_nsec-ts.tv_nsec)/(1e9));
     printf("getImage time = %f\n",double(te.tv_nsec-ts.tv_nsec)/(1e9));
     cvNamedWindow("tempImage");
-    cvShowImage("tempImage",ballTracker.images[1]);
+    cvShowImage("tempImage",image_l);
+    cvShowImage("src",image_r);
+    //cvShowImage("tempImage",ballTracker.images[1]);
     cvWaitKey(10);
     int ret=ballTracker.processFrame(1);
     if(ret!=2)
