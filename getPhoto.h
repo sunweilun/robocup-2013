@@ -74,10 +74,10 @@ static void getPhoto(IplImage *image_l, IplImage *image_r) {
     //printf("2\n");
 	//usleep(2000);
 
-	struct jpeg_decompress_struct* jpeg_decompressor = newDecompressor ( MAX_NET_WIDTH );
-	long rgbbuffersize = MAX_NET_WIDTH * MAX_NET_HEIGHT * 3;
-	unsigned char rgbbuffer[rgbbuffersize];
 	for (int i = 0; i != 2; ++i) {
+		struct jpeg_decompress_struct* jpeg_decompressor = newDecompressor ( MAX_NET_WIDTH );
+		long rgbbuffersize = MAX_NET_WIDTH * MAX_NET_HEIGHT * 3;
+		unsigned char rgbbuffer[rgbbuffersize];
 		if (read_JPEG_buffer(jpeg_decompressor, tmpbuf[i], gsize, rgbbuffer, rgbbuffersize, NULL, 0) != 1) {
 			fprintf(stderr, "\nerror while decoding jpeg files.\n");
 			if (isfatalerror()) {
