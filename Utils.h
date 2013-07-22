@@ -7,6 +7,8 @@
 
 using namespace std;
 
+inline float myabs(float a){return a > 0 ? a : -a;}
+
 bool getTurningPoint(const cv::Point2f& robot,const cv::Point2f& center,const cv::Point& target,cv::Point2f &turningPoint,float radius);
 
 float cal_distance(const cv::Point2f& p1, const cv::Point2f& p2);

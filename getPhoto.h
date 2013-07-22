@@ -91,10 +91,10 @@ static void getPhoto(IplImage *image_l, IplImage *image_r) {
 		}
 
 		//char dataName[300];
-		int width = 320, height = 240;
+		//int width = 320, height = 240;
 		if (i == 0) {	//left
 			//sprintf(dataName, "./data/%d_l.dat", photoCnt);
-			image_l = cvCreateImage(cvSize(width,height),IPL_DEPTH_8U,3);
+			//image_l = cvCreateImage(cvSize(width,height),IPL_DEPTH_8U,3);
 			/*
 			int r,g,b;
 		    for (int i = 0; i < width * height; i++) {
@@ -105,7 +105,7 @@ static void getPhoto(IplImage *image_l, IplImage *image_r) {
 		    */
 		    memcpy(image_l->imageData, rgbbuffer, rgbbuffersize);
 		} else {
-			image_r = cvCreateImage(cvSize(width,height),IPL_DEPTH_8U,3);
+			//image_r = cvCreateImage(cvSize(width,height),IPL_DEPTH_8U,3);
 			memcpy(image_r->imageData, rgbbuffer, rgbbuffersize);
 		}
 		//sprintf(dataName, "./data/%d_r.dat", photoCnt++);
@@ -116,7 +116,7 @@ static void getPhoto(IplImage *image_l, IplImage *image_r) {
 		//fclose(p);
 		//memcpy(tempbuf[i], rgbbuffer, rgbbuffersize);
 		//image = cvCreateImage(cvSize(width,height),IPL_DEPTH_8U,3);
-	    
+
 	}
 }
 

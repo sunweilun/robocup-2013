@@ -35,8 +35,8 @@ struct BallTracker
 struct Area
 {
 	int id;
-	int x;
-	int y;
+	double x;
+	double y;
 	int xmin;
 	int ymin;
 	int xmax;
