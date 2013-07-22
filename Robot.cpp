@@ -120,25 +120,6 @@ void Robot::getImage()
     getPhoto(image_l, image_r);
     cvCvtColor(image_l,image_l,CV_RGB2BGR);
     cvCvtColor(image_r,image_r,CV_RGB2BGR);
-    /*
-=======
-    usleep(SLEEPTIME_BEFORE_PHOTO/10); // sleep until the camera is still
-    getPhoto();
->>>>>>> Stashed changes
-    char dp[] = DATA_PATH;
-    char fn[1024];
-    sprintf(fn,"%s%d_l.dat",dp,imgCounter);
-    if(image_l)
-        cvReleaseImage(&image_l);
-    image_l = loadDatImage(fn);
-    sprintf(fn,"%s%d_r.dat",dp,imgCounter);
-    printf("fn = %s\n", fn);
-    if(image_r)
-        cvReleaseImage(&image_r);
-    image_r = loadDatImage(fn);
-    */
-
-    //imgCounter++;
 }
 
 void Robot::moveForward(float dist,float max_speed)

@@ -137,7 +137,9 @@ void calib(bool isRight)
     bool next = true;
     printf("in\n");
     ptInit();
-    getPhoto();
+	printf("out\n");
+    /*
+	getPhoto();
     printf("out\n");
     char dp[] = DATA_PATH;
     char fn[1024];
@@ -146,17 +148,23 @@ void calib(bool isRight)
     else
         sprintf(fn,"%s0_l.dat",dp);
     IplImage* image = loadDatImage(fn);
+    */
+	if(!image_l)
+        image_l = cvCreateImage(cvSize(width,height),IPL_DEPTH_8U,3);
+    if(!image_r)
+        image_r = cvCreateImage(cvSize(width,height),IPL_DEPTH_8U,3);
+	getPhoto(image_l, image_r);
     void* ptrs[5];
     ptrs[0] = (void*) sc;
     ptrs[1] = (void*) rc;
     ptrs[2] = (void*) &np;
     ptrs[3] = (void*) &next;
-    ptrs[4] = (void*) image;
+    ptrs[4] = (void*) image_r;
     cvNamedWindow("Calib");
     cvSetMouseCallback("Calib",mouse_cb,ptrs);
     while(next)
     {
-        cvShowImage("Calib",image);
+        cvShowImage("Calib",image_r);
         cvWaitKey(100);
     }
     cvDestroyWindow("Calib");
