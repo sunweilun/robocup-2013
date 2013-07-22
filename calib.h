@@ -149,10 +149,9 @@ void calib(bool isRight)
         sprintf(fn,"%s0_l.dat",dp);
     IplImage* image = loadDatImage(fn);
     */
-	if(!image_l)
-        image_l = cvCreateImage(cvSize(width,height),IPL_DEPTH_8U,3);
-    if(!image_r)
-        image_r = cvCreateImage(cvSize(width,height),IPL_DEPTH_8U,3);
+	IplImage *image_l, *image_r;
+    image_l = cvCreateImage(cvSize(width,height),IPL_DEPTH_8U,3);
+    image_r = cvCreateImage(cvSize(width,height),IPL_DEPTH_8U,3);
 	getPhoto(image_l, image_r);
     void* ptrs[5];
     ptrs[0] = (void*) sc;
