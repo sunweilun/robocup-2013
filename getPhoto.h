@@ -70,9 +70,9 @@ static void getPhoto(IplImage *image_l, IplImage *image_r) {
 	memcpy(tmpbuf[0], raw_buf1, MAX_MJPEG_SIZE);
 	memcpy(tmpbuf[1], raw_buf2, MAX_MJPEG_SIZE);
 	gsize = size;
-	pthread_mutex_unlock(&ca_mutex);
+	//pthread_mutex_unlock(&ca_mutex);
     //printf("2\n");
-	usleep(2000);
+	//usleep(2000);
 
 	struct jpeg_decompress_struct* jpeg_decompressor = newDecompressor ( MAX_NET_WIDTH );
 	long rgbbuffersize = MAX_NET_WIDTH * MAX_NET_HEIGHT * 3;
@@ -94,6 +94,8 @@ static void getPhoto(IplImage *image_l, IplImage *image_r) {
 			memcpy(image_r->imageData, rgbbuffer, rgbbuffersize);
 		}
 	}
+	pthread_mutex_unlock(&ca_mutex);
+	usleep(2000);
 }
 
 #endif
