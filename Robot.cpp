@@ -262,8 +262,7 @@ void Robot::keepGoal()
         x += temp_dist*sin(ori);
         y += temp_dist*cos(ori);
         cv::Point2f ballVelocity,ballPosition;
-        if(getBallInfo(ballVelocity,ballPosition))
-            ballLocated = true;
+        ballLocated = getBallInfo(ballVelocity,ballPosition);
         ball_velocity = ballVelocity;
         ball_coord = ballPosition;
         updateRadar();
@@ -293,8 +292,6 @@ bool Robot::getBallInfo(cv::Point2f &ballVelocity,cv::Point2f &ballPosition)
     struct timespec ts,te;
     getImage();
     clock_gettime(CLOCK_REALTIME,&ts);
-    if(image_l==NULL )
-        return false;
     //printf("image_l...OK\n");
     ballTracker.pushFrame(image_l,0);
     //printf("pushFrame..OK\n");
@@ -304,11 +301,6 @@ bool Robot::getBallInfo(cv::Point2f &ballVelocity,cv::Point2f &ballPosition)
     clock_gettime(CLOCK_REALTIME,&te);
     ballTracker.pushFrame(image_l,float(te.tv_nsec-ts.tv_nsec)/(1e9));
     printf("getImage time = %f\n",double(te.tv_nsec-ts.tv_nsec)/(1e9));
-    cvNamedWindow("tempImage");
-    cvShowImage("tempImage",image_l);
-    cvShowImage("src",image_r);
-    //cvShowImage("tempImage",ballTracker.images[1]);
-    cvWaitKey(10);
     int ret=ballTracker.processFrame(1);
     if(ret!=2)
         return false;
@@ -320,6 +312,11 @@ bool Robot::getBallInfo(cv::Point2f &ballVelocity,cv::Point2f &ballPosition)
     ballVelocity.y=(ballTracker.pos[1].y-ballTracker.pos[0].y)/(ballTracker.pos[1].z-ballTracker.pos[0].z);
     printf("ball: world pos=(%f,%f) v=(%f,%f)\n",ballTracker.pos[1].x,ballTracker.pos[1].y,ballVelocity.x,ballVelocity.y);
     cvCircle(ballTracker.images[1],cvPoint(ballTracker.pos_scr[1].x,ballTracker.pos_scr[1].y),ballTracker.pos_scr[1].z,CV_RGB(255,255,0),2);
+    cvNamedWindow("tempImage");
+    //cvShowImage("tempImage",image_l);
+    cvShowImage("src",image_r);
+    cvShowImage("tempImage",ballTracker.images[1]);
+    cvWaitKey(10);
     ballTracker.popFrame(2);
 
     return true;

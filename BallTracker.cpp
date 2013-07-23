@@ -2,7 +2,7 @@
 
 int checkColorThreshold(float* c)
 {
-	if(c[0]<BALL_H_UB && c[0]>BALL_H_LB && c[1]<BALL_S_UB && c[1]>BALL_S_LB  && c[2]<BALL_V_UB && c[2]>BALL_V_LB )
+	if(c[0]<BALL_MOVING_H_UB && c[0]>BALL_MOVING_H_LB && c[1]<BALL_MOVING_S_UB && c[1]>BALL_MOVING_S_LB  && c[2]<BALL_MOVING_V_UB && c[2]>BALL_MOVING_V_LB )
 		return 1;
 	else
 		return 0;
@@ -102,8 +102,8 @@ int BallTracker::processFrame(int frameId)
 
 cv::Point3f BallTracker::ballDetect(const IplImage* image1)
 {
-	struct timespec ts,te;
-    clock_gettime(CLOCK_REALTIME,&ts);
+	//struct timespec ts,te;
+    //clock_gettime(CLOCK_REALTIME,&ts);
     if(image1 == NULL)
         exit(1);
 	IplImage* tmp1=cvCreateImage(cvGetSize(image1),IPL_DEPTH_32F,3);
@@ -111,7 +111,10 @@ cv::Point3f BallTracker::ballDetect(const IplImage* image1)
 	cvConvertScale(image1,tmp1,1.0/255.0,0);
 	cvCvtColor(tmp1,tmp1,CV_BGR2HSV);
 
-	float* dat1=(float*)tmp1->imageData;
+    //clock_gettime(CLOCK_REALTIME,&te);
+    //printf("!!---1 time = %f\n",double(te.tv_nsec-ts.tv_nsec)/(1e9));
+	//clock_gettime(CLOCK_REALTIME,&ts);
+    float* dat1=(float*)tmp1->imageData;
 
 	cvSet(bina,cvScalar(0));
 	int sum=0;
@@ -125,11 +128,15 @@ cv::Point3f BallTracker::ballDetect(const IplImage* image1)
 			++sum;
 		}
 	}
-//	cvNamedWindow("tempImage1");
-//	if(images.size()>1)
- //      cvShowImage("tempImage1",bina);
-//	cvWaitKey(10);
-	char* b=bina->imageData;
+cvNamedWindow("tempImage1");
+	if(images.size()>1)
+      cvShowImage("tempImage1",bina);
+	cvWaitKey(10);
+
+    //clock_gettime(CLOCK_REALTIME,&te);
+    //printf("!!---2 time = %f\n",double(te.tv_nsec-ts.tv_nsec)/(1e9));
+	//clock_gettime(CLOCK_REALTIME,&ts);
+    char* b=bina->imageData;
 	int id[240*320];
 	memset(id,0,240*320*sizeof(int));
 	int newId=1;
@@ -206,18 +213,27 @@ cv::Point3f BallTracker::ballDetect(const IplImage* image1)
 				}
 				waitQueue.pop_front();
 			}
+			if(curArea<100)
+                continue;
 			xx/=curArea;
 			yy/=curArea;
+			if(xmax-xmin<10 || ymax-ymin<10)
+			continue;
 			areas.push_back(Area(newId,xx,yy,xmin,xmax,ymin,ymax,curArea));
 			//printf("id=%d centerPoint=(%d,%d) area=%d\n",newId,xx,yy,curArea);
-			++newId;
+			++newId;//warning: Id not good
 		}
 	}
 	cvReleaseImage(&bina);
 	cvReleaseImage(&tmp1);
+
+    //clock_gettime(CLOCK_REALTIME,&te);
+    //printf("!!---3 time = %f\n",double(te.tv_nsec-ts.tv_nsec)/(1e9));
+	//clock_gettime(CLOCK_REALTIME,&ts);
 	if(areas.size()>0)
 	{
 	printf("areas.size=%d\n",areas.size());
+		    CvRect bBox=robot->worldMap.getMap_bbox();
 		int mx=0;
 		for(int i=0;i<areas.size();++i)
 		{
@@ -227,7 +243,6 @@ cv::Point3f BallTracker::ballDetect(const IplImage* image1)
 		    cv::Point2f roboPos=robot->worldMap.coord_screen2robot(scrPos,false);
 		    cv::Point2f worldPos=robot->worldMap.coord_robot2world(roboPos);
 		    cv::Point2f imgPos=robot->world2image(worldPos);
-		    CvRect bBox=robot->worldMap.getMap_bbox();
 
 		    if(!(imgPos.x>bBox.x && imgPos.x<bBox.x+bBox.width && imgPos.y>bBox.y && imgPos.y<bBox.y+bBox.height))
 		    {
@@ -240,8 +255,8 @@ cv::Point3f BallTracker::ballDetect(const IplImage* image1)
                 }
 		}
 		printf("best area found. mx=%d pos=(%f,%f) r=%f\n",mx,areas[mx].x,areas[mx].y,(areas[mx].ymax-areas[mx].ymin)/2.0);
-    clock_gettime(CLOCK_REALTIME,&te);
-    printf("!!!!!!!!!!! time = %f\n",double(te.tv_nsec-ts.tv_nsec)/(1e9));
+    //clock_gettime(CLOCK_REALTIME,&te);
+    //printf("!!----4 time = %f\n",double(te.tv_nsec-ts.tv_nsec)/(1e9));
 		return cv::Point3f(areas[mx].x,areas[mx].y,(areas[mx].ymax-areas[mx].ymin)/2);
 	}
 	return cv::Point3f(-1,-1,-1);
