@@ -11,7 +11,7 @@ extern "C" {
 	#include "motor/include/jpegdec.h"
 }
 
-#define MAX_MJPEG_SIZE 200000
+#define MAX_MJPEG_SIZE 250000
 #define MAX_NET_WIDTH	320
 #define MAX_NET_HEIGHT	240
 
