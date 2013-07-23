@@ -287,9 +287,10 @@ void Robot::keepGoal()
         float temp_dist = moveDist;
         x += temp_dist*sin(ori);
         y += temp_dist*cos(ori);
+        cv::Point2f robot_velocity(v_level*DELTA_V*sin(ori),v_level*DELTA_V*cos(ori));
         pthread_mutex_lock(&vt_mutex);
         ballLocated = vt_ballLocated;
-        ball_velocity = ballVelocity;
+        ball_velocity = ballVelocity + robot_velocity;
         ball_coord = ballPosition;
         pthread_mutex_unlock(&vt_mutex);
         updateRadar();
