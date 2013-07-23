@@ -287,22 +287,23 @@ void Robot::keepGoal()
         float temp_dist = moveDist;
         x += temp_dist*sin(ori);
         y += temp_dist*cos(ori);
-        cv::Point2f robot_velocity(v_level*DELTA_V*sin(ori),v_level*DELTA_V*cos(ori));
+        float temp_v_level = v_level;
+        cv::Point2f robot_velocity(temp_v_level*DELTA_V*sin(ori),temp_v_level*DELTA_V*cos(ori));
         pthread_mutex_lock(&vt_mutex);
         ballLocated = vt_ballLocated;
         ball_velocity = ballVelocity + robot_velocity;
         ball_coord = ballPosition;
         pthread_mutex_unlock(&vt_mutex);
         updateRadar();
-        if(length(ballVelocity)<MIN_BALL_SPEED_TO_KEEP || ballVelocity.dot(ownGoal_frontDir)/length(ballVelocity)>-0.1)
+        if(length(ball_velocity)<MIN_BALL_SPEED_TO_KEEP || ball_velocity.dot(ownGoal_frontDir)/length(ball_velocity)>-0.1)
         {
             //targetDist = 0;
             continue;
         }
-        float ball2goal_time = getTime(ballPosition,ballVelocity,ownGoal_coord,keeper_dir);
-        float ball2keepline_time = getTime(ballPosition,ballVelocity,keeper_center,keeper_dir);
-        cv::Point2f goalPoint = ballPosition + ball2goal_time*ballVelocity;
-        cv::Point2f moveToPoint = ballPosition + ball2keepline_time*ballVelocity;
+        float ball2goal_time = getTime(ball_coord,ball_velocity,ownGoal_coord,keeper_dir);
+        float ball2keepline_time = getTime(ball_coord,ball_velocity,keeper_center,keeper_dir);
+        cv::Point2f goalPoint = ball_coord + ball2goal_time*ball_velocity;
+        cv::Point2f moveToPoint = ball_coord + ball2keepline_time*ball_velocity;
         if(ball2keepline_time<0 || length(goalPoint-ownGoal_coord)<ownGoal_width/2)
         {
             //targetDist = 0;
