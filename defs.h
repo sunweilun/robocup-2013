@@ -17,7 +17,7 @@
 
 #define MAP_LEN 512
 
-#define SLEEPTIME_BEFORE_PHOTO 100000
+#define SLEEPTIME_BEFORE_PHOTO 1000
 #define FIND_BALL_ANGLE 30
 #define RADAR_WND_NAME "Radar"
 
@@ -53,6 +53,13 @@
 #define BALL_S_UB 0.495
 #define BALL_V_LB 0.23
 #define BALL_V_UB 0.58
+
+#define BALL_MOVING_H_LB 235
+#define BALL_MOVING_H_UB 331
+#define BALL_MOVING_S_LB 0.1
+#define BALL_MOVING_S_UB 0.5
+#define BALL_MOVING_V_LB 0.15
+#define BALL_MOVING_V_UB 0.7
 
 #define GRASS_BOUND cv::Point2f(GRASS_H_LB,GRASS_H_UB),cv::Point2f(GRASS_S_LB,GRASS_S_UB),cv::Point2f(GRASS_V_LB,GRASS_V_UB)
 #define LINE_BOUND cv::Point2f(LINE_H_LB,LINE_H_UB),cv::Point2f(LINE_S_LB,LINE_S_UB),cv::Point2f(LINE_V_LB,LINE_V_UB)

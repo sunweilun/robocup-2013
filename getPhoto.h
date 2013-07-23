@@ -91,7 +91,7 @@ static void getPhoto(IplImage *image_l, IplImage *image_r) {
 	gsize[1] = size[1];
 	pthread_mutex_unlock(&ca_mutex_r);
 	usleep(2000);
-	gsize = size;
+	//gsize = size;
 	//pthread_mutex_unlock(&ca_mutex);
     //printf("2\n");
 	//usleep(2000);
