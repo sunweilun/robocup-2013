@@ -1,5 +1,6 @@
 #include "opencv/cv.h"
 #include "opencv/highgui.h"
+#include <stdio.h>
 #include <vector>
 
 #ifndef UTILS_H

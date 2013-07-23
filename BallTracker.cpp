@@ -38,6 +38,20 @@ int BallTracker::popFrame(int numOfFrame)
 	return n;
 }
 
+int BallTracker::popBackFrame(int numOfFrame)
+{
+	int n=0;
+	for(int i=0;i<numOfFrame;++i)
+	{
+		cvReleaseImage(&(images.back()));
+		images.pop_back();
+		pos.pop_back();
+		pos_scr.pop_back();
+		++n;
+	}
+	return n;
+}
+
 void BallTracker::scr2wld(int frameId)
 {
     cv::Point2f scrPos(pos_scr[frameId].x,pos_scr[frameId].y+pos_scr[frameId].z);

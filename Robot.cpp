@@ -231,13 +231,54 @@ void Robot::rotateTo(const cv::Point2f &new_dir)
 void* visionThread(void* params)
 {
     void ** paramsList = (void**)params;
-    Robot *robot = (Robot*) paramsList[0];
-    cv::Point2f *ballPosition = (cv::Point2f*) paramsList[1];
-    cv::Point2f *ballVelocity = (cv::Point2f*) paramsList[2];
+    Robot& robot = *((Robot*) paramsList[0]);
+    cv::Point2f& ballPosition = *((cv::Point2f*) paramsList[1]);
+    cv::Point2f& ballVelocity = *((cv::Point2f*) paramsList[2]);
     bool *ballLocated = (bool*) paramsList[3];
     while(true)
     {
         //to be done by zc
+        robot.ballTracker.popFrame(robot.ballTracker.images.size());
+        struct timespec t0;
+        robot.getImage();
+        clock_gettime(CLOCK_REALTIME,&t0);
+        robot.ballTracker.pushFrame(robot.image_l,double(t0.tv_nsec)/(1e9));
+        printf("t = %f\n",double(t0.tv_nsec)/(1e9));
+        int ret;
+        if(robot.ballTracker.pos.size()==2)
+            robot.ballTracker.processFrame(1);
+        else if(robot.ballTracker.pos.size()==1)
+            robot.ballTracker.processFrame(0);
+        if(ret!=2)
+        {
+            ballLocated=false;
+            continue;
+        }
+        if(robot.ballTracker.pos[1]==cv::Point3f(-1,-1,-1))
+        {
+            ballLocated=false;
+            robot.ballTracker.popBackFrame(1);
+            continue;
+        }
+        if(robot.ballTracker.pos[0]==cv::Point3f(-1,-1,-1))
+        {
+            ballLocated=false;
+            robot.ballTracker.popFrame(1);
+            continue;
+        }
+        pthread_mutex_lock(&vt_mutex);
+        ballPosition.x=robot.ballTracker.pos[1].x;
+        ballPosition.y=robot.ballTracker.pos[1].y;
+        ballVelocity.x=(robot.ballTracker.pos[1].x-robot.ballTracker.pos[0].x)/(robot.ballTracker.pos[1].z-robot.ballTracker.pos[0].z);
+        ballVelocity.y=(robot.ballTracker.pos[1].y-robot.ballTracker.pos[0].y)/(robot.ballTracker.pos[1].z-robot.ballTracker.pos[0].z);
+        printf("ball: world pos=(%f,%f) v=(%f,%f)\n",robot.ballTracker.pos[1].x,robot.ballTracker.pos[1].y,ballVelocity.x,ballVelocity.y);
+        pthread_mutex_unlock(&vt_mutex);
+        cvCircle(robot.ballTracker.images[1],cvPoint(robot.ballTracker.pos_scr[1].x,robot.ballTracker.pos_scr[1].y),robot.ballTracker.pos_scr[1].z,CV_RGB(255,255,0),2);
+        cvNamedWindow("tempImage");
+        cvShowImage("src",robot.image_r);
+        cvShowImage("tempImage",robot.ballTracker.images[1]);
+        cvWaitKey(10);
+        robot.ballTracker.popFrame(1);
     }
 }
 
@@ -294,6 +335,10 @@ void Robot::keepGoal()
         ball_coord = ballPosition;
         pthread_mutex_unlock(&vt_mutex);
         updateRadar();
+        if(!ballLocated)
+        {
+            continue;
+        }
         if(length(ballVelocity)<MIN_BALL_SPEED_TO_KEEP || ballVelocity.dot(ownGoal_frontDir)/length(ballVelocity)>-0.1)
         {
             //targetDist = 0;

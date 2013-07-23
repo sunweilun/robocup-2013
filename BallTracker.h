@@ -28,6 +28,7 @@ struct BallTracker
 	int pushFrame(const IplImage* image, double t);
 	int processFrame(int frameId);
 	int popFrame(int numOfFrame);
+	int popBackFrame(int numOfFrame);
     cv::Point3f ballDetect(const IplImage* image1);
     void setParent(Robot* robot){ this->robot = robot; };
 };
