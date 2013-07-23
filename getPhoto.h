@@ -11,7 +11,7 @@ extern "C" {
 	#include "motor/include/jpegdec.h"
 }
 
-#define MAX_MJPEG_SIZE 200000
+#define MAX_MJPEG_SIZE 250000
 #define MAX_NET_WIDTH	320
 #define MAX_NET_HEIGHT	240
 
@@ -30,8 +30,6 @@ static void* myInitLeft(void* arg) {
 	nets_init(&nst[0], port1);
 
     while (true) {
-        //int size = 0;
-        //printf("3\n");
         usleep(2000);
         pthread_mutex_lock(&ca_mutex_l);
         if ((size[0] = net_recv(raw_buf1, MAX_MJPEG_SIZE, &(nst[0]))) <= 0) {
@@ -39,7 +37,6 @@ static void* myInitLeft(void* arg) {
             return (void*)0;
         }
         pthread_mutex_unlock(&ca_mutex_l);
-        //printf("4\n");
         usleep(2000);
     }
 }
@@ -91,10 +88,6 @@ static void getPhoto(IplImage *image_l, IplImage *image_r) {
 	gsize[1] = size[1];
 	pthread_mutex_unlock(&ca_mutex_r);
 	usleep(2000);
-	//gsize = size;
-	//pthread_mutex_unlock(&ca_mutex);
-    //printf("2\n");
-	//usleep(2000);
 	struct jpeg_decompress_struct* jpeg_decompressor = newDecompressor ( MAX_NET_WIDTH );
 	long rgbbuffersize = MAX_NET_WIDTH * MAX_NET_HEIGHT * 3;
 	unsigned char rgbbuffer[rgbbuffersize];
