@@ -178,3 +178,8 @@ float length(const cv::Point2f &p)
 {
     return sqrt(pow(p.x,2)+pow(p.y,2));
 }
+
+int getAcc(int k,float dist)
+{
+
+}

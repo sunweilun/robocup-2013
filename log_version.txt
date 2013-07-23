@@ -1,4 +1,0 @@
-begin
-[Version] Using video0 video1 (framerate 20)
-[Version] Using ip 127.0.0.1 port 8000 8001
-[Version|Cmv|cmv_init] Can't open the file : colors0.txt

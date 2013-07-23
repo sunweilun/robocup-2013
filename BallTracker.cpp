@@ -20,6 +20,7 @@ int BallTracker::pushFrame(const IplImage* image, double t)
 	images.push_back(img);
 	pos.push_back(cv::Point3f(-1,-1,t));
 	pos_scr.push_back(cv::Point3f(-1,-1,-1));
+	printf("images.size=%d after push.\n",images.size());
 	return 0;
 }
 
@@ -39,7 +40,7 @@ int BallTracker::popFrame(int numOfFrame)
 
 void BallTracker::scr2wld(int frameId)
 {
-    cv::Point2f scrPos(pos_scr[frameId].x,pos_scr[frameId].y-pos_scr[frameId].z);
+    cv::Point2f scrPos(pos_scr[frameId].x,pos_scr[frameId].y+pos_scr[frameId].z);
 	cv::Point2f roboPos=robot->worldMap.coord_screen2robot(scrPos,false);
 	cv::Point2f worldPos=robot->worldMap.coord_robot2world(roboPos);
 	pos[frameId].x=worldPos.x;
@@ -52,6 +53,7 @@ int BallTracker::processFrame(int frameId)
 		return -1;
 	if(images.size()==1)
 	{
+        //printf("if_1\n");
 		pos_scr[frameId]=ballDetect(images[frameId]);
 		if(pos_scr[frameId]==cv::Point3f(-1,-1,-1))
 			return -1;
@@ -60,28 +62,39 @@ int BallTracker::processFrame(int frameId)
 	}
 	if(frameId==0)
 	{
+	//printf("if_2\n");
 		pos_scr[frameId]=ballDetect(images[frameId]);
+			//printf("if_2_1\n");
 		if(pos_scr[frameId]==cv::Point3f(-1,-1,-1))
 			return -1;
         scr2wld(frameId);
+			//printf("if_2_2\n");
 		if(pos_scr[frameId+1]==cv::Point3f(-1,-1,-1))
 			pos_scr[frameId+1]=ballDetect(images[frameId+1]);
+			//printf("if_2_3\n");
 		if(pos_scr[frameId+1]==cv::Point3f(-1,-1,-1))
 			return -1;
         scr2wld(frameId+1);
+			//printf("if_2_4\n");
 		return 2;
 	}
-	//if(images.size()-1==frameId)
+	if(images.size()-1==frameId)
 	{
+	//printf("if_3\n");
+	//printf("pos_scr.size=%d images.size=%d frameId=%d\n",pos_scr.size(),images.size(),frameId);
 		pos_scr[frameId]=ballDetect(images[frameId]);
+			//printf("if_3_1\n");
 		if(pos_scr[frameId]==cv::Point3f(-1,-1,-1))
 			return -1;
         scr2wld(frameId);
+			//printf("if_3_2\n");
 		if(pos_scr[frameId-1]==cv::Point3f(-1,-1,-1))
 			pos_scr[frameId-1]=ballDetect(images[frameId-1]);
+			//printf("if_3_3\n");
 		if(pos_scr[frameId-1]==cv::Point3f(-1,-1,-1))
 			return -1;
         scr2wld(frameId-1);
+			//printf("if_3_4\n");
 		return 2;
 	}
 	return 0;
@@ -89,6 +102,8 @@ int BallTracker::processFrame(int frameId)
 
 cv::Point3f BallTracker::ballDetect(const IplImage* image1)
 {
+	struct timespec ts,te;
+    clock_gettime(CLOCK_REALTIME,&ts);
     if(image1 == NULL)
         exit(1);
 	IplImage* tmp1=cvCreateImage(cvGetSize(image1),IPL_DEPTH_32F,3);
@@ -110,12 +125,18 @@ cv::Point3f BallTracker::ballDetect(const IplImage* image1)
 			++sum;
 		}
 	}
+//	cvNamedWindow("tempImage1");
+//	if(images.size()>1)
+ //      cvShowImage("tempImage1",bina);
+//	cvWaitKey(10);
 	char* b=bina->imageData;
 	int id[240*320];
 	memset(id,0,240*320*sizeof(int));
 	int newId=1;
+
 	deque<int> waitQueue;
 	vector<Area> areas;
+
 	for(int i=0;i<240;++i)
 	{
 		for(int j=0;j<320;++j)
@@ -196,20 +217,31 @@ cv::Point3f BallTracker::ballDetect(const IplImage* image1)
 	cvReleaseImage(&tmp1);
 	if(areas.size()>0)
 	{
+	printf("areas.size=%d\n",areas.size());
 		int mx=0;
 		for(int i=0;i<areas.size();++i)
 		{
+            if(areas[mx].area>=areas[i].area)
+                continue;
 		    cv::Point2f scrPos(areas[i].x,areas[i].y-(areas[mx].ymax-areas[mx].ymin)/2);
-		    cv::Point2f roboPos=robot->worldMap.coord_screen2robot(scrPos);
+		    cv::Point2f roboPos=robot->worldMap.coord_screen2robot(scrPos,false);
 		    cv::Point2f worldPos=robot->worldMap.coord_robot2world(roboPos);
 		    cv::Point2f imgPos=robot->world2image(worldPos);
 		    CvRect bBox=robot->worldMap.getMap_bbox();
 
 		    if(!(imgPos.x>bBox.x && imgPos.x<bBox.x+bBox.width && imgPos.y>bBox.y && imgPos.y<bBox.y+bBox.height))
+		    {
+		    //printf("areas[%d] out! imgPos=(%f,%f) bBox=(%d,%d)(%d,%d)\n",i,imgPos.x,imgPos.y,bBox.x,bBox.y,bBox.width,bBox.height);
                 continue;
-			if(areas[mx].area<areas[i].area)
+                }
+			{
+            //printf("area[%d] cur max\n",i);
 				mx=i;
+                }
 		}
+		printf("best area found. mx=%d pos=(%f,%f) r=%f\n",mx,areas[mx].x,areas[mx].y,(areas[mx].ymax-areas[mx].ymin)/2.0);
+    clock_gettime(CLOCK_REALTIME,&te);
+    printf("!!!!!!!!!!! time = %f\n",double(te.tv_nsec-ts.tv_nsec)/(1e9));
 		return cv::Point3f(areas[mx].x,areas[mx].y,(areas[mx].ymax-areas[mx].ymin)/2);
 	}
 	return cv::Point3f(-1,-1,-1);

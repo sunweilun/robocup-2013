@@ -60,7 +60,7 @@ static void msend(void *buf, int n) {
     write(fd, buf, n);
 }
 
-void sendAA(int left, int right, int a)
+void sendAA(int left, int right, int a = 0)
 {
     char buf[16];
     buf[0] = 102;

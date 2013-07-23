@@ -6,6 +6,7 @@
 Robot::Robot()
 {
     worldMap.setParent(this);
+    ballTracker.setParent(this);
     ptInit();
     motor_init();
     imgCounter = 0;
@@ -112,19 +113,13 @@ void Robot::drawMap()
 void Robot::getImage()
 {
     usleep(SLEEPTIME_BEFORE_PHOTO); // sleep until the camera is still
-    getPhoto();
-    char dp[] = DATA_PATH;
-    char fn[1024];
-    sprintf(fn,"%s%d_l.dat",dp,imgCounter);
-    if(image_l)
-        cvReleaseImage(&image_l);
-    image_l = loadDatImage(fn);
-    sprintf(fn,"%s%d_r.dat",dp,imgCounter);
-    printf("fn = %s\n", fn);
-    if(image_r)
-        cvReleaseImage(&image_r);
-    image_r = loadDatImage(fn);
-    imgCounter++;
+    if(!image_l)
+        image_l = cvCreateImage(cvSize(width,height),IPL_DEPTH_8U,3);
+    if(!image_r)
+        image_r = cvCreateImage(cvSize(width,height),IPL_DEPTH_8U,3);
+    getPhoto(image_l, image_r);
+    cvCvtColor(image_l,image_l,CV_RGB2BGR);
+    cvCvtColor(image_r,image_r,CV_RGB2BGR);
 }
 
 void Robot::moveForward(float dist,float max_speed)
@@ -135,7 +130,7 @@ void Robot::moveForward(float dist,float max_speed)
     updateRadar();
 }
 
-void Robot::moveRotate(bool isLeft, int radius, float arc)
+void Robot::moveRotate(bool isLeft, float radius, float arc)
 {
     if (isLeft)
     {
@@ -154,9 +149,21 @@ void Robot::moveRotate(bool isLeft, int radius, float arc)
         ori -= arc;
         ori = ori<0?ori+2*M_PI:(ori>2*M_PI?ori-2*M_PI:ori);
 
-        float rinner = radius - 15;
-        float rout = radius + 15;
-        goWithSpeed(rinner / 2, rout / 2, arc * 2);
+        int min1 = 0, min2 = 0, mind = 10000;
+        float radio = (radius + DIST_BETWEEN_WHEELS / 2) / (radius - DIST_BETWEEN_WHEELS / 2);
+        float nowr;
+        for (int i = 2; i <= 30; i++)
+            for (int j = 1; j < i; j++) {
+                nowr = i *1.0 / j;
+                if (myabs(nowr - radio) <= mind) {
+                    mind = myabs(nowr - radio);
+                    min1 = i;
+                    min2 = j;
+                }
+            }
+            float t = (((arc - ARC_DELAY) * (radius + DIST_BETWEEN_WHEELS / 2) / min1)
+                                + ((arc - ARC_DELAY) * (radius - DIST_BETWEEN_WHEELS / 2) / min2)) / 2;
+            goWithSpeed(min2, min1, t);
     }
     else  //turn right
     {
@@ -175,10 +182,21 @@ void Robot::moveRotate(bool isLeft, int radius, float arc)
         ori += arc;
         ori = ori<0?ori+2*M_PI:(ori>2*M_PI?ori-2*M_PI:ori);
 
-
-        float rinner = radius  - 15;
-        float rout = radius + 15;
-        goWithSpeed(rout / 2, rinner / 2, arc * 2);
+        int min1 = 0, min2 = 0, mind = 10000;
+        float radio = (radius + DIST_BETWEEN_WHEELS / 2) / (radius - DIST_BETWEEN_WHEELS / 2);
+        float nowr;
+        for (int i = 2; i <= 30; i++)
+            for (int j = 1; j < i; j++) {
+                nowr = i *1.0 / j;
+                if (myabs(nowr - radio) <= mind) {
+                    mind = myabs(nowr - radio);
+                    min1 = i;
+                    min2 = j;
+                }
+            }
+            float t = (((arc - ARC_DELAY) * (radius + DIST_BETWEEN_WHEELS / 2) / min1)
+                                + ((arc - ARC_DELAY) * (radius - DIST_BETWEEN_WHEELS / 2) / min2)) / 2;
+            goWithSpeed(min1, min2, t);
     }
 
 }
@@ -208,6 +226,21 @@ void Robot::rotateTo(const cv::Point2f &new_dir)
         turnLeft(angle*180/M_PI);
 }
 
+void* keeperMotionThread(void* params)
+{
+    int v_level = 0;
+    void ** paramsList = (void**)params;
+    float *targetDist = (float*) paramsList[0];
+    float *moveDist = (float*) paramsList[1];
+    while(true)
+    {
+        (*moveDist) += v_level*DELTA_V*DELTA_T;
+        v_level += getAcc(v_level,*targetDist-*moveDist);
+        sendAA(v_level*DELTA_V,v_level*DELTA_V);
+        usleep(DELTA_T);
+    }
+}
+
 void Robot::keepGoal()
 {
     bool abort = false;
@@ -215,50 +248,82 @@ void Robot::keepGoal()
     cv::Point2f keeper_dir(ownGoal_frontDir.y,-ownGoal_frontDir.x);
     moveTo(keeper_center,30);
     rotateTo(keeper_dir);
+    void *params[3];
+    float targetDist = 0;
+    float moveDist = 0;
+    params[0] = &targetDist;
+    params[1] = &moveDist;
+    pthread_t thread;
+    pthread_create(&thread,NULL,&keeperMotionThread,(void*)params);
+    usleep(1000);
     while(!abort)
     {
+        float temp_dist = moveDist;
+        x += temp_dist*sin(ori);
+        y += temp_dist*cos(ori);
         cv::Point2f ballVelocity,ballPosition;
-        getBallInfo(ballVelocity,ballPosition);
-        ball_velocity=ballVelocity;
-        ball_coord=ballPosition;
+        if(getBallInfo(ballVelocity,ballPosition))
+            ballLocated = true;
+        ball_velocity = ballVelocity;
+        ball_coord = ballPosition;
         updateRadar();
         if(length(ballVelocity)<MIN_BALL_SPEED_TO_KEEP || ballVelocity.dot(ownGoal_frontDir)/length(ballVelocity)>-0.1)
+        {
+            targetDist = 0;
             continue;
+        }
         float ball2goal_time = getTime(ballPosition,ballVelocity,ownGoal_coord,keeper_dir);
         float ball2keepline_time = getTime(ballPosition,ballVelocity,keeper_center,keeper_dir);
-        cv::Point2f crossPoint = ballPosition + ball2goal_time*ballVelocity;
-        if(ball2keepline_time<0 || length(crossPoint-ownGoal_coord)<ownGoal_width/2)
+        cv::Point2f goalPoint = ballPosition + ball2goal_time*ballVelocity;
+        cv::Point2f moveToPoint = ballPosition + ball2keepline_time*ballVelocity;
+        if(ball2keepline_time<0 || length(goalPoint-ownGoal_coord)<ownGoal_width/2)
+        {
+            targetDist = 0;
             continue;
-        struct timespec ts,te;
-        clock_gettime(CLOCK_REALTIME,&ts);
-        float fwd_dist = ((ballPosition + ballVelocity*ball2keepline_time)-ownGoal_coord).dot(keeper_dir);
-        moveForward(fwd_dist,50);
-        clock_gettime(CLOCK_REALTIME,&te);
-        float move_cost = float(te.tv_nsec-ts.tv_nsec)/(1e9);
-        float sleepTime = EXTRA_WAIT_TIME+ball2keepline_time-move_cost;
-        if(sleepTime>0)
-            usleep(sleepTime*1e6);
-        moveForward(-fwd_dist,50);
+        }
+        targetDist = (moveToPoint - keeper_center).dot(keeper_dir);
     }
 }
 
 bool Robot::getBallInfo(cv::Point2f &ballVelocity,cv::Point2f &ballPosition)
 {
     // to be done by zc
+    //printf("in BallInfo\n");
+    ballTracker.popFrame(ballTracker.images.size());
     struct timespec ts,te;
     getImage();
     clock_gettime(CLOCK_REALTIME,&ts);
+    if(image_l==NULL )
+        return false;
+    //printf("image_l...OK\n");
     ballTracker.pushFrame(image_l,0);
+    //printf("pushFrame..OK\n");
+    //printf("in image\n");
     getImage();
+    //printf("out image\n");
     clock_gettime(CLOCK_REALTIME,&te);
     ballTracker.pushFrame(image_l,float(te.tv_nsec-ts.tv_nsec)/(1e9));
-    ballTracker.processFrame(1);
+    printf("getImage time = %f\n",double(te.tv_nsec-ts.tv_nsec)/(1e9));
+    cvNamedWindow("tempImage");
+    cvShowImage("tempImage",image_l);
+    cvShowImage("src",image_r);
+    //cvShowImage("tempImage",ballTracker.images[1]);
+    cvWaitKey(10);
+    int ret=ballTracker.processFrame(1);
+    if(ret!=2)
+        return false;
+    if(ballTracker.pos[1]==cv::Point3f(-1,-1,-1) || ballTracker.pos[0]==cv::Point3f(-1,-1,-1))
+        return false;
     ballPosition.x=ballTracker.pos[1].x;
     ballPosition.y=ballTracker.pos[1].y;
     ballVelocity.x=(ballTracker.pos[1].x-ballTracker.pos[0].x)/(ballTracker.pos[1].z-ballTracker.pos[0].z);
     ballVelocity.y=(ballTracker.pos[1].y-ballTracker.pos[0].y)/(ballTracker.pos[1].z-ballTracker.pos[0].z);
+    printf("ball: world pos=(%f,%f) v=(%f,%f)\n",ballTracker.pos[1].x,ballTracker.pos[1].y,ballVelocity.x,ballVelocity.y);
+    cvCircle(ballTracker.images[1],cvPoint(ballTracker.pos_scr[1].x,ballTracker.pos_scr[1].y),ballTracker.pos_scr[1].z,CV_RGB(255,255,0),2);
     ballTracker.popFrame(2);
+
     return true;
+
 }
 
 void Robot::shoot()
@@ -312,28 +377,31 @@ void Robot::spin() {//}std::vector<cv::Point2f> balls) {
     cv::Point2f ball2 = ans[1];// = balls[1];
     printf("%f %f\n %f %f\n", ball1.x, ball1.y, ball2.x, ball2.y);
     //get them by some means of find balls
-    float rspin =  cal_distance(ball1, ball2) / 2;
+    float delta =  20;
+    float r12 =  cal_distance(ball1, ball2) / 2;
+    float rspin = (delta * delta + r12 * r12) / (2 * delta);
     float disr1 =  cal_distance(ball1, robot_coord);
     int  inrspin = 0;
     while(inrspin < rspin)
         inrspin++;
     printf("rspin:%f, disr1:%f, inrspin:%d\n", rspin, disr1, inrspin);
-    if (rspin <= DIST_BETWEEN_WHEELS / 2) {
-        std::cout << "here!" << std::endl;
-        return;
-    }
-    cv::Point2f a = ball1 - robot_coord;
-    cv::Point2f b = ball2 - ball1;
+    cv::Point2f rto1 = ball1 - robot_coord;
+    cv::Point2f b1to2 = ball2 - ball1;
 
-    float arc = M_PI - acos((a.x *b.x + a.y * b.y) / (2 *rspin * disr1));
-    float turn = a.x * b.y - a.y * b.x;
+    float arc = asin(r12 / rspin);
+    //float turn = a.x * b.y - a.y * b.x;
     //printf("a.x:%f, a.y:%f\n", a.x, a.y);
     //cvWaitKey();
-    cv::Point2f pturn(x + 0.01 *a.x, y + 0.01*a.y);
-    moveTo(pturn, 5);
-    moveForward(disr1 * 0.99 - inrspin, 20);
-    if (turn > 0) {
-        turnRight(90);
+    cv::Point2f pturn1(ball1.x -  b1to2.x, ball1.y - b1to2.y);
+    cv::Point2f pturn2(ball1.x -  b1to2.x / 2, ball1.y - b1to2.y / 2);
+    moveTo(pturn1, 20);
+    moveTo(pturn2, 20);
+    turnRight(arc);
+    moveRotate(true, rspin, arc * 2);
+
+    moveRotate(false, rspin, arc * 2);
+    /*if (turn > 0) {
+        turnRight(arc);
         moveRotate(true, inrspin, 2 * M_PI - arc);
         usleep(5000000);
         moveRotate(false, inrspin, M_PI);
@@ -343,7 +411,7 @@ void Robot::spin() {//}std::vector<cv::Point2f> balls) {
         moveRotate(false, inrspin, 2 * M_PI - arc);
         usleep(5000000);
         moveRotate(true, inrspin, M_PI);
-    }
+    }*/
 }
 
 void Robot::updateRadar()
@@ -355,7 +423,6 @@ void Robot::updateRadar()
     int y = (MAP_LEN>>1)+1-this->y;
     cv::Point2f ownGoal_coord = world2image(this->ownGoal_coord);
     cv::Point2f ball_coord = world2image(this->ball_coord);
-    cv::Point2f ball_velocity = world2image(this->ball_velocity);
 
 
     if(shootRoute.size()>1)
@@ -373,13 +440,13 @@ void Robot::updateRadar()
     if(ballLocated)
     {
         cvCircle(wMap,cvPoint(ball_coord.x,ball_coord.y),BALL_RADIUS,CV_RGB(255,0,0),-1);
-        cvLine(wMap,cvPoint(ball_coord.x,ball_coord.y),cvPoint(ball_coord.x+ball_velocity.x,ball_coord.y+ball_velocity.y),CV_RGB(0,255,255),2);
+        cvLine(wMap,cvPoint(ball_coord.x,ball_coord.y),cvPoint(ball_coord.x+ball_velocity.x,ball_coord.y-ball_velocity.y),CV_RGB(0,255,255),2);
     }
     if(ownGoalLocated)
         cvCircle(wMap,cvPoint(ownGoal_coord.x,ownGoal_coord.y),5,CV_RGB(0,0,255),-1);
     cvShowImage(RADAR_WND_NAME,wMap);
     cvSaveImage("Radar.png",wMap);
-    cvWaitKey(100);
+    cvWaitKey(10);
     cvReleaseImage(&wMap);
 }
 
@@ -470,7 +537,9 @@ Robot::~Robot()
         cvReleaseImage(&image_l);
     if(image_r)
         cvReleaseImage(&image_r);
+	ptEnd();
 }
+
 bool Robot::locateOwnGate()
 {
     IplImage* wMap = worldMap.getMap();
@@ -545,6 +614,7 @@ bool Robot::locateOwnGate()
         ownGoal_frontDir = cv::Point2f(-goalWidthDir.y,goalWidthDir.x);
         ownGoal_frontDir = ownGoal_frontDir*(1/length(ownGoal_frontDir));
         ownGoal_frontDir.y = -ownGoal_frontDir.y;
+
         cv::Point2f robot_coord(x,y);
         if(ownGoal_frontDir.dot(robot_coord - ownGoal_coord)<0)
         {

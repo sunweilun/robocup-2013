@@ -3,6 +3,9 @@
 #define KEEPER_DIST2GOAL 50
 #define EXTRA_WAIT_TIME 3
 
+#define DELTA_T 10000
+#define DELTA_V 5
+
 #define DELTA_RADIUS 15
 #define SHOOT_PREP_DIST 60
 #define TO_GOAL_DIST 40
@@ -17,7 +20,7 @@
 
 #define MAP_LEN 512
 
-#define SLEEPTIME_BEFORE_PHOTO 1000000
+#define SLEEPTIME_BEFORE_PHOTO 100000
 #define FIND_BALL_ANGLE 30
 #define RADAR_WND_NAME "Radar"
 
