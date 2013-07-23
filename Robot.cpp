@@ -3,6 +3,8 @@
 #include "getPhoto.h"
 #include <math.h>
 
+pthread_mutex_t vt_mutex = PTHREAD_MUTEX_INITIALIZER;
+
 Robot::Robot()
 {
     worldMap.setParent(this);
@@ -226,49 +228,74 @@ void Robot::rotateTo(const cv::Point2f &new_dir)
         turnLeft(angle*180/M_PI);
 }
 
+void* visionThread(void* params)
+{
+    void ** paramsList = (void**)params;
+    Robot *robot = (Robot*) paramsList[0];
+    cv::Point2f *ballPosition = (cv::Point2f*) paramsList[1];
+    cv::Point2f *ballVelocity = (cv::Point2f*) paramsList[2];
+    bool *ballLocated = (bool*) paramsList[3];
+    while(true)
+    {
+        //to be done by zc
+    }
+}
+
 void* keeperMotionThread(void* params)
 {
-    int v_level = 0;
     void ** paramsList = (void**)params;
     float *targetDist = (float*) paramsList[0];
     float *moveDist = (float*) paramsList[1];
+    int *v_level= (int*) paramsList[2];
     while(true)
     {
-        (*moveDist) += v_level*DELTA_V*DELTA_T;
-        v_level += getAcc(v_level,*targetDist-*moveDist);
-        sendAA(v_level*DELTA_V,v_level*DELTA_V);
+        (*moveDist) += (*v_level)*DELTA_V*DELTA_T;
+        (*v_level) += getAcc((*v_level),*targetDist-*moveDist);
+        sendAA((*v_level)*DELTA_V,(*v_level)*DELTA_V);
         usleep(DELTA_T);
     }
 }
 
 void Robot::keepGoal()
 {
+    int v_level = 0;
     bool abort = false;
+    cv::Point2f ballVelocity,ballPosition;
+    bool vt_ballLocated;
     cv::Point2f keeper_center = ownGoal_coord + ownGoal_frontDir*KEEPER_DIST2GOAL;
     cv::Point2f keeper_dir(ownGoal_frontDir.y,-ownGoal_frontDir.x);
     moveTo(keeper_center,30);
     rotateTo(keeper_dir);
-    void *params[3];
+    void *kmt_params[3];
+    void *vt_params[4];
     float targetDist = 0;
     float moveDist = 0;
-    params[0] = &targetDist;
-    params[1] = &moveDist;
-    pthread_t thread;
-    pthread_create(&thread,NULL,&keeperMotionThread,(void*)params);
+    kmt_params[0] = &targetDist;
+    kmt_params[1] = &moveDist;
+    kmt_params[2] = &v_level;
+    vt_params[0] = this;
+    vt_params[1] = &ballPosition;
+    vt_params[2] = &ballVelocity;
+    vt_params[3] = &vt_ballLocated;
+    pthread_t km_thread,v_thread;
+    pthread_create(&km_thread,NULL,&keeperMotionThread,(void*)kmt_params);
+    usleep(1000);
+    pthread_create(&v_thread,NULL,&visionThread,(void*)vt_params);
     usleep(1000);
     while(!abort)
     {
         float temp_dist = moveDist;
         x += temp_dist*sin(ori);
         y += temp_dist*cos(ori);
-        cv::Point2f ballVelocity,ballPosition;
-        ballLocated = getBallInfo(ballVelocity,ballPosition);
+        pthread_mutex_lock(&vt_mutex);
+        ballLocated = vt_ballLocated;
         ball_velocity = ballVelocity;
         ball_coord = ballPosition;
+        pthread_mutex_unlock(&vt_mutex);
         updateRadar();
         if(length(ballVelocity)<MIN_BALL_SPEED_TO_KEEP || ballVelocity.dot(ownGoal_frontDir)/length(ballVelocity)>-0.1)
         {
-            targetDist = 0;
+            //targetDist = 0;
             continue;
         }
         float ball2goal_time = getTime(ballPosition,ballVelocity,ownGoal_coord,keeper_dir);
@@ -277,7 +304,7 @@ void Robot::keepGoal()
         cv::Point2f moveToPoint = ballPosition + ball2keepline_time*ballVelocity;
         if(ball2keepline_time<0 || length(goalPoint-ownGoal_coord)<ownGoal_width/2)
         {
-            targetDist = 0;
+            //targetDist = 0;
             continue;
         }
         targetDist = (moveToPoint - keeper_center).dot(keeper_dir);

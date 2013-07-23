@@ -9,6 +9,7 @@ class Robot
 {
     friend class WorldMap;
     friend class BallTracker;
+    friend void* visionThread(void* params);
 private:
     BallTracker ballTracker;
     cv::Point2f ball_velocity;
