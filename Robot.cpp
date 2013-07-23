@@ -336,15 +336,12 @@ void Robot::keepGoal()
         ball_coord = ballPosition;
         pthread_mutex_unlock(&vt_mutex);
         updateRadar();
-<<<<<<< HEAD
+
         if(!ballLocated)
         {
             continue;
         }
-        if(length(ballVelocity)<MIN_BALL_SPEED_TO_KEEP || ballVelocity.dot(ownGoal_frontDir)/length(ballVelocity)>-0.1)
-=======
         if(length(ball_velocity)<MIN_BALL_SPEED_TO_KEEP || ball_velocity.dot(ownGoal_frontDir)/length(ball_velocity)>-0.1)
->>>>>>> bc87d66aa1a86572dc933ae1000e84f49ab52d60
         {
             //targetDist = 0;
             continue;
