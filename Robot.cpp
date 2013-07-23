@@ -545,7 +545,6 @@ bool Robot::locateOwnGate()
         ownGoal_frontDir = cv::Point2f(-goalWidthDir.y,goalWidthDir.x);
         ownGoal_frontDir = ownGoal_frontDir*(1/length(ownGoal_frontDir));
         ownGoal_frontDir.y = -ownGoal_frontDir.y;
-        printf("goalFront = %f,%f\n",ownGoal_frontDir.x,ownGoal_frontDir.y);
         cv::Point2f robot_coord(x,y);
         if(ownGoal_frontDir.dot(robot_coord - ownGoal_coord)<0)
         {
