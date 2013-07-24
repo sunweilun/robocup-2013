@@ -6,6 +6,10 @@
 #define DELTA_T 10000
 #define DELTA_V 5
 
+#define MAX_SPEED_LEVEL (50.0/DELTA_V)
+
+#define GOAL_WIDTH_DELTA 10
+
 #define DELTA_RADIUS 15
 #define SHOOT_PREP_DIST 60
 #define TO_GOAL_DIST 40

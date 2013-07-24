@@ -253,7 +253,7 @@ cv::Point3f BallTracker::ballDetect(const IplImage* image1)
 		{
             if(areas[mx].area>=areas[i].area)
                 continue;
-		    cv::Point2f scrPos(areas[i].x,areas[i].y-(areas[i].ymax-areas[i].ymin)/2);
+		    cv::Point2f scrPos(areas[i].x,areas[i].y+(areas[i].ymax-areas[i].ymin)/2);
 		    cv::Point2f roboPos=robot->worldMap.coord_screen2robot(scrPos,false);
 		    cv::Point2f worldPos=robot->worldMap.coord_robot2world(roboPos);
 		    cv::Point2f imgPos=robot->world2image(worldPos);
@@ -269,11 +269,11 @@ cv::Point3f BallTracker::ballDetect(const IplImage* image1)
                 }
 		}
 		printf("best area found. mx=%d pos=(%f,%f) r=%f\n",mx,areas[mx].x,areas[mx].y,(areas[mx].ymax-areas[mx].ymin)/2.0);
-		    cv::Point2f scrPos(areas[mx].x,areas[mx].y-(areas[mx].ymax-areas[mx].ymin)/2);
+		    cv::Point2f scrPos(areas[mx].x,areas[mx].y+(areas[mx].ymax-areas[mx].ymin)/2);
 		    cv::Point2f roboPos=robot->worldMap.coord_screen2robot(scrPos,false);
 		    cv::Point2f worldPos=robot->worldMap.coord_robot2world(roboPos);
 		    cv::Point2f imgPos=robot->world2image(worldPos);
-		printf("best area image pos=(%f,%f)\n",imgPos.x,imgPos.y);
+		printf("best area roboPos=(%f,%f) worldPos=(%f,%f) imgPos=(%f,%f)\n",roboPos.x,roboPos.y,worldPos.x,worldPos.y,imgPos.x,imgPos.y);
 
 
     //clock_gettime(CLOCK_REALTIME,&te);

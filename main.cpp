@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include "Robot.h"
-//#include "calib.h"
+#include "calib.h"
 
 #define CALIBTEST 0
 #define ROBOTTEST 1
@@ -24,7 +24,7 @@ int main()
 #endif
 
 #if CALIBTEST
-    calib(false);//@parm:isRight
+    calib(true);//@parm:isRight
 #endif
 
 #if BALLTEST

@@ -314,9 +314,9 @@ void* keeperMotionThread(void* params)
     Robot &robot= *((Robot*) paramsList[3]);
     while(!robot.abort)
     {
-        moveDist += v_level*DELTA_V*DELTA_T;
+        //moveDist += v_level*DELTA_V*DELTA_T/float(1e6);
         v_level += getAcc(v_level,targetDist-moveDist);
-       // sendAA((*v_level)*DELTA_V,(*v_level)*DELTA_V);
+       // sendAA(v_level*DELTA_V,v_level*DELTA_V);
         usleep(DELTA_T);
     }
 }
@@ -344,8 +344,8 @@ void Robot::keepGoal()
     while(!abort)
     {
         float temp_dist = moveDist;
-        x += temp_dist*sin(ori);
-        y += temp_dist*cos(ori);
+        x = keeper_center.x+temp_dist*sin(ori);
+        y = keeper_center.y+temp_dist*cos(ori);
         float temp_v_level = v_level;
         cv::Point2f robot_velocity(temp_v_level*DELTA_V*sin(ori),temp_v_level*DELTA_V*cos(ori));
         updateBallStatus();
@@ -363,7 +363,7 @@ void Robot::keepGoal()
         float ball2keepline_time = getTime(ball_coord,ball_velocity,keeper_center,keeper_dir);
         cv::Point2f goalPoint = ball_coord + ball2goal_time*ball_velocity;
         cv::Point2f moveToPoint = ball_coord + ball2keepline_time*ball_velocity;
-        if(ball2keepline_time<0 || length(goalPoint-ownGoal_coord)<ownGoal_width/2)
+        if(ball2keepline_time<0 || length(goalPoint-ownGoal_coord)>ownGoal_width/2+GOAL_WIDTH_DELTA)
         {
             //targetDist = 0;
             continue;

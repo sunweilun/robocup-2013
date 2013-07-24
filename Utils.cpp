@@ -181,5 +181,28 @@ float length(const cv::Point2f &p)
 
 int getAcc(int k,float dist)
 {
-
+    int ret=0;
+    if(dist>k*abs(k)/2.0)
+    {
+        ret=1;
+    }
+    else if(dist<k*abs(k)/2.0)
+    {
+        ret=-1;
+    }
+    else
+    {
+        if(k>0)
+        {
+            ret=-1;
+        }
+        else if(k<0)
+        {
+            ret=1;
+        }
+    }
+    if(abs(k+ret)<=MAX_SPEED_LEVEL)
+        return ret;
+    else
+        return 0;
 }

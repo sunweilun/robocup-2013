@@ -3,6 +3,8 @@
 #include <stdio.h>
 #include <vector>
 
+#include "defs.h"
+
 #ifndef UTILS_H
 #define UTILS_H
 
