@@ -9,7 +9,6 @@ class Robot
 {
     friend class WorldMap;
     friend class BallTracker;
-    friend void* visionThread(void* params);
 private:
     BallTracker ballTracker;
     cv::Point2f ball_velocity;
@@ -32,6 +31,7 @@ private:
     void updateRadar();
     bool getBallInfo(cv::Point2f &ballVelocity,cv::Point2f &ballPosition);
     std::vector<cv::Point2f> shootRoute;
+    void updateBallStatus();
 public:
     Robot();
     void keepGoal();

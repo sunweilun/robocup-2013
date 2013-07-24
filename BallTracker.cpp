@@ -20,7 +20,7 @@ int BallTracker::pushFrame(const IplImage* image, double t)
 	images.push_back(img);
 	pos.push_back(cv::Point3f(-1,-1,t));
 	pos_scr.push_back(cv::Point3f(-1,-1,-1));
-	printf("images.size=%d after push.\n",images.size());
+	//printf("images.size=%d after push.\n",images.size());
 	return 0;
 }
 
@@ -142,7 +142,7 @@ cv::Point3f BallTracker::ballDetect(const IplImage* image1)
 			++sum;
 		}
 	}
-cvNamedWindow("tempImage1");
+    cvNamedWindow("tempImage1");
 	if(images.size()>1)
       cvShowImage("tempImage1",bina);
 	cvWaitKey(10);
@@ -253,7 +253,7 @@ cvNamedWindow("tempImage1");
 		{
             if(areas[mx].area>=areas[i].area)
                 continue;
-		    cv::Point2f scrPos(areas[i].x,areas[i].y-(areas[mx].ymax-areas[mx].ymin)/2);
+		    cv::Point2f scrPos(areas[i].x,areas[i].y-(areas[i].ymax-areas[i].ymin)/2);
 		    cv::Point2f roboPos=robot->worldMap.coord_screen2robot(scrPos,false);
 		    cv::Point2f worldPos=robot->worldMap.coord_robot2world(roboPos);
 		    cv::Point2f imgPos=robot->world2image(worldPos);
@@ -269,6 +269,13 @@ cvNamedWindow("tempImage1");
                 }
 		}
 		printf("best area found. mx=%d pos=(%f,%f) r=%f\n",mx,areas[mx].x,areas[mx].y,(areas[mx].ymax-areas[mx].ymin)/2.0);
+		    cv::Point2f scrPos(areas[mx].x,areas[mx].y-(areas[mx].ymax-areas[mx].ymin)/2);
+		    cv::Point2f roboPos=robot->worldMap.coord_screen2robot(scrPos,false);
+		    cv::Point2f worldPos=robot->worldMap.coord_robot2world(roboPos);
+		    cv::Point2f imgPos=robot->world2image(worldPos);
+		printf("best area image pos=(%f,%f)\n",imgPos.x,imgPos.y);
+
+
     //clock_gettime(CLOCK_REALTIME,&te);
     //printf("!!----4 time = %f\n",double(te.tv_nsec-ts.tv_nsec)/(1e9));
 		return cv::Point3f(areas[mx].x,areas[mx].y,(areas[mx].ymax-areas[mx].ymin)/2);

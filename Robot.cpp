@@ -3,8 +3,6 @@
 #include "getPhoto.h"
 #include <math.h>
 
-pthread_mutex_t vt_mutex = PTHREAD_MUTEX_INITIALIZER;
-
 Robot::Robot()
 {
     worldMap.setParent(this);
@@ -228,58 +226,86 @@ void Robot::rotateTo(const cv::Point2f &new_dir)
         turnLeft(angle*180/M_PI);
 }
 
-void* visionThread(void* params)
+void Robot::updateBallStatus()
 {
-    void ** paramsList = (void**)params;
-    Robot& robot = *((Robot*) paramsList[0]);
-    cv::Point2f& ballPosition = *((cv::Point2f*) paramsList[1]);
-    cv::Point2f& ballVelocity = *((cv::Point2f*) paramsList[2]);
-    bool *ballLocated = (bool*) paramsList[3];
-    while(true)
-    {
+    cv::Point2f& ballPosition = ball_coord;
+    cv::Point2f& ballVelocity = ball_velocity;
         //to be done by zc
-        robot.ballTracker.popFrame(robot.ballTracker.images.size());
-        struct timespec t0;
-        robot.getImage();
-        clock_gettime(CLOCK_REALTIME,&t0);
-        robot.ballTracker.pushFrame(robot.image_l,double(t0.tv_nsec)/(1e9));
-        printf("t = %f\n",double(t0.tv_nsec)/(1e9));
-        int ret;
-        if(robot.ballTracker.pos.size()==2)
-            robot.ballTracker.processFrame(1);
-        else if(robot.ballTracker.pos.size()==1)
-            robot.ballTracker.processFrame(0);
-        if(ret!=2)
-        {
-            ballLocated=false;
-            continue;
-        }
-        if(robot.ballTracker.pos[1]==cv::Point3f(-1,-1,-1))
-        {
-            ballLocated=false;
-            robot.ballTracker.popBackFrame(1);
-            continue;
-        }
-        if(robot.ballTracker.pos[0]==cv::Point3f(-1,-1,-1))
-        {
-            ballLocated=false;
-            robot.ballTracker.popFrame(1);
-            continue;
-        }
-        pthread_mutex_lock(&vt_mutex);
-        ballPosition.x=robot.ballTracker.pos[1].x;
-        ballPosition.y=robot.ballTracker.pos[1].y;
-        ballVelocity.x=(robot.ballTracker.pos[1].x-robot.ballTracker.pos[0].x)/(robot.ballTracker.pos[1].z-robot.ballTracker.pos[0].z);
-        ballVelocity.y=(robot.ballTracker.pos[1].y-robot.ballTracker.pos[0].y)/(robot.ballTracker.pos[1].z-robot.ballTracker.pos[0].z);
-        printf("ball: world pos=(%f,%f) v=(%f,%f)\n",robot.ballTracker.pos[1].x,robot.ballTracker.pos[1].y,ballVelocity.x,ballVelocity.y);
-        pthread_mutex_unlock(&vt_mutex);
-        cvCircle(robot.ballTracker.images[1],cvPoint(robot.ballTracker.pos_scr[1].x,robot.ballTracker.pos_scr[1].y),robot.ballTracker.pos_scr[1].z,CV_RGB(255,255,0),2);
-        cvNamedWindow("tempImage");
-        cvShowImage("src",robot.image_r);
-        cvShowImage("tempImage",robot.ballTracker.images[1]);
-        cvWaitKey(10);
-        robot.ballTracker.popFrame(1);
+    struct timespec t0;
+    getImage();
+    clock_gettime(CLOCK_REALTIME,&t0);
+    ballLocated=false;
+    ballTracker.pushFrame(image_l,double(t0.tv_nsec)/(1e9));
+    printf("t = %f\n",double(t0.tv_nsec)/(1e9));
+    printf("images.size=%d before processing.\n",ballTracker.images.size());
+    int ret;
+    if(ballTracker.pos.size()==2)
+        ret=ballTracker.processFrame(1);
+    else if(ballTracker.pos.size()==1)
+        ret=ballTracker.processFrame(0);
+    else
+    {
+        ballTracker.popFrame(ballTracker.images.size());
+        return;
     }
+    if(ret!=2)
+    {
+    printf("fuck1\n");
+        ballLocated=false;
+        //if(ballTracker.images.size()>1)
+            //ballTracker.popFrame(ballTracker.images.size()-1);
+        //continue;
+    }
+    if(ballTracker.images.size()>=2)
+    {
+        if(ballTracker.pos[1]==cv::Point3f(-1,-1,-1))
+        {
+            printf("fuck2\n");
+            ballLocated=false;
+            ballTracker.popBackFrame(1);
+            return;
+        }
+    }
+    if(ballTracker.images.size()>=1)
+    {
+        if(ballTracker.pos[0]==cv::Point3f(-1,-1,-1))
+        {
+            printf("fuck3\n");
+            ballLocated=false;
+            ballTracker.popFrame(1);
+            return;
+        }
+    }
+    printf("fuck4 images.size=%d\n",ballTracker.images.size());
+    if(ballTracker.images.size()!=2 || ret!=2)
+        return;
+    ballPosition.x=ballTracker.pos[1].x;
+    ballPosition.y=ballTracker.pos[1].y;
+    ballVelocity.x=(ballTracker.pos[1].x-ballTracker.pos[0].x)/(ballTracker.pos[1].z-ballTracker.pos[0].z);
+    ballVelocity.y=(ballTracker.pos[1].y-ballTracker.pos[0].y)/(ballTracker.pos[1].z-ballTracker.pos[0].z);
+    ballLocated=true;
+    printf("ball: world pos=(%f,%f) v=(%f,%f)\n",ballTracker.pos[1].x,ballTracker.pos[1].y,ballVelocity.x,ballVelocity.y);
+    printf("showing\n");
+
+    cvCircle(ballTracker.images[1],cvPoint(ballTracker.pos_scr[1].x,ballTracker.pos_scr[1].y),ballTracker.pos_scr[1].z,CV_RGB(255,255,0),2);
+    cvNamedWindow("leftImage");
+    cvMoveWindow("leftImage",512,0);
+    cvShowImage("leftImage",ballTracker.images[1]);
+    cvWaitKey(10);
+    //cvDestroyWindow("leftImage");
+    cvNamedWindow("image_l");
+    cvMoveWindow("image_l",512,512);
+    cvShowImage("image_l",image_l);
+    cvWaitKey(10);
+    //cvDestroyWindow("image_l");
+    //if(ballTracker.images.size()>1)
+    {
+       // ballLocated=false;
+        //ballTracker.popFrame(ballTracker.images.size()-1);
+        //continue;
+    }
+    ballTracker.popFrame(1);
+    return;
 }
 
 void* keeperMotionThread(void* params)
@@ -292,7 +318,7 @@ void* keeperMotionThread(void* params)
     {
         (*moveDist) += (*v_level)*DELTA_V*DELTA_T;
         (*v_level) += getAcc((*v_level),*targetDist-*moveDist);
-        sendAA((*v_level)*DELTA_V,(*v_level)*DELTA_V);
+       // sendAA((*v_level)*DELTA_V,(*v_level)*DELTA_V);
         usleep(DELTA_T);
     }
 }
@@ -308,20 +334,13 @@ void Robot::keepGoal()
     moveTo(keeper_center,30);
     rotateTo(keeper_dir);
     void *kmt_params[3];
-    void *vt_params[4];
     float targetDist = 0;
     float moveDist = 0;
     kmt_params[0] = &targetDist;
     kmt_params[1] = &moveDist;
     kmt_params[2] = &v_level;
-    vt_params[0] = this;
-    vt_params[1] = &ballPosition;
-    vt_params[2] = &ballVelocity;
-    vt_params[3] = &vt_ballLocated;
-    pthread_t km_thread,v_thread;
+    pthread_t km_thread;
     pthread_create(&km_thread,NULL,&keeperMotionThread,(void*)kmt_params);
-    usleep(1000);
-    pthread_create(&v_thread,NULL,&visionThread,(void*)vt_params);
     usleep(1000);
     while(!abort)
     {
@@ -330,13 +349,8 @@ void Robot::keepGoal()
         y += temp_dist*cos(ori);
         float temp_v_level = v_level;
         cv::Point2f robot_velocity(temp_v_level*DELTA_V*sin(ori),temp_v_level*DELTA_V*cos(ori));
-        pthread_mutex_lock(&vt_mutex);
-        ballLocated = vt_ballLocated;
-        ball_velocity = ballVelocity + robot_velocity;
-        ball_coord = ballPosition;
-        pthread_mutex_unlock(&vt_mutex);
+        updateBallStatus();
         updateRadar();
-
         if(!ballLocated)
         {
             continue;
@@ -355,6 +369,9 @@ void Robot::keepGoal()
             //targetDist = 0;
             continue;
         }
+        shootRoute.clear();
+        shootRoute.push_back(cv::Point(x,y));
+        shootRoute.push_back(moveToPoint);
         targetDist = (moveToPoint - keeper_center).dot(keeper_dir);
     }
 }
