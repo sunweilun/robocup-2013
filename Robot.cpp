@@ -250,7 +250,6 @@ void Robot::updateBallStatus()
     }
     if(ret!=2)
     {
-    printf("fuck1\n");
         ballLocated=false;
         //if(ballTracker.images.size()>1)
             //ballTracker.popFrame(ballTracker.images.size()-1);
@@ -260,7 +259,6 @@ void Robot::updateBallStatus()
     {
         if(ballTracker.pos[1]==cv::Point3f(-1,-1,-1))
         {
-            printf("fuck2\n");
             ballLocated=false;
             ballTracker.popBackFrame(1);
             return;
@@ -270,13 +268,12 @@ void Robot::updateBallStatus()
     {
         if(ballTracker.pos[0]==cv::Point3f(-1,-1,-1))
         {
-            printf("fuck3\n");
             ballLocated=false;
             ballTracker.popFrame(1);
             return;
         }
     }
-    printf("fuck4 images.size=%d\n",ballTracker.images.size());
+    printf("images.size=%d\n",ballTracker.images.size());
     if(ballTracker.images.size()!=2 || ret!=2)
         return;
     ballPosition.x=ballTracker.pos[1].x;
@@ -311,13 +308,14 @@ void Robot::updateBallStatus()
 void* keeperMotionThread(void* params)
 {
     void ** paramsList = (void**)params;
-    float *targetDist = (float*) paramsList[0];
-    float *moveDist = (float*) paramsList[1];
-    int *v_level= (int*) paramsList[2];
-    while(true)
+    float &targetDist = *((float*) paramsList[0]);
+    float &moveDist = *((float*) paramsList[1]);
+    int &v_level= *((int*) paramsList[2]);
+    Robot &robot= *((Robot*) paramsList[3]);
+    while(!robot.abort)
     {
-        (*moveDist) += (*v_level)*DELTA_V*DELTA_T;
-        (*v_level) += getAcc((*v_level),*targetDist-*moveDist);
+        moveDist += v_level*DELTA_V*DELTA_T;
+        v_level += getAcc(v_level,targetDist-moveDist);
        // sendAA((*v_level)*DELTA_V,(*v_level)*DELTA_V);
         usleep(DELTA_T);
     }
@@ -326,19 +324,20 @@ void* keeperMotionThread(void* params)
 void Robot::keepGoal()
 {
     int v_level = 0;
-    bool abort = false;
+    abort = false;
     cv::Point2f ballVelocity,ballPosition;
     bool vt_ballLocated;
     cv::Point2f keeper_center = ownGoal_coord + ownGoal_frontDir*KEEPER_DIST2GOAL;
     cv::Point2f keeper_dir(ownGoal_frontDir.y,-ownGoal_frontDir.x);
     moveTo(keeper_center,30);
     rotateTo(keeper_dir);
-    void *kmt_params[3];
+    void *kmt_params[4];
     float targetDist = 0;
     float moveDist = 0;
     kmt_params[0] = &targetDist;
     kmt_params[1] = &moveDist;
     kmt_params[2] = &v_level;
+    kmt_params[3] = this;
     pthread_t km_thread;
     pthread_create(&km_thread,NULL,&keeperMotionThread,(void*)kmt_params);
     usleep(1000);

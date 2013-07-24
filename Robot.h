@@ -9,7 +9,9 @@ class Robot
 {
     friend class WorldMap;
     friend class BallTracker;
+    friend void* keeperMotionThread(void* params);
 private:
+    bool abort;
     BallTracker ballTracker;
     cv::Point2f ball_velocity;
     cv::Point2f world2image(const cv::Point2f& coord);
