@@ -17,7 +17,8 @@ int main()
     //robot.shoot();
     //robot.findBall();
     //robot.shoot();
-    robot.spin();
+    //robot.spin();
+    robot.moveRotate(true, 65, M_PI / 2);
     //robot.radarOff();
 
 
