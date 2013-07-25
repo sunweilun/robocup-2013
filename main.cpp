@@ -10,9 +10,9 @@ int main()
 {
 #if ROBOTTEST
     Robot robot;
-    robot.radarOn();
-    robot.drawMap();
-    robot.keepGoal();
+    //robot.radarOn();
+    //robot.drawMap();
+    //robot.keepGoal();
     //robot.findBall();
     //robot.shoot();
     //robot.findBall();

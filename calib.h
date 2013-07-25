@@ -158,12 +158,18 @@ void calib(bool isRight)
     ptrs[1] = (void*) rc;
     ptrs[2] = (void*) &np;
     ptrs[3] = (void*) &next;
-    ptrs[4] = (void*) image_r;
+    if (isRight)
+        ptrs[4] = (void*) image_r;
+    else
+        ptrs[4] = (void*) image_l;
     cvNamedWindow("Calib");
     cvSetMouseCallback("Calib",mouse_cb,ptrs);
     while(next)
     {
-        cvShowImage("Calib",image_r);
+        if (isRight)
+            cvShowImage("Calib",image_r);
+        else
+            cvShowImage("Calib",image_l);
         cvWaitKey(100);
     }
     cvDestroyWindow("Calib");

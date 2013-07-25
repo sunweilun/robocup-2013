@@ -11,6 +11,7 @@ class Robot
     friend class BallTracker;
     friend void* keeperMotionThread(void* params);
 private:
+    timespec timeBase;
     bool abort;
     BallTracker ballTracker;
     cv::Point2f ball_velocity;

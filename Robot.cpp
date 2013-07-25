@@ -152,10 +152,10 @@ void Robot::moveRotate(bool isLeft, float radius, float arc)
         int min1 = 0, min2 = 0, mind = 10000;
         float radio = (radius + DIST_BETWEEN_WHEELS / 2) / (radius - DIST_BETWEEN_WHEELS / 2);
         float nowr;
-        for (int i = 2; i <= 30; i++)
+        for (int i = 30; i >= 2; i--)
             for (int j = 1; j < i; j++) {
                 nowr = i *1.0 / j;
-                if (myabs(nowr - radio) <= mind) {
+                if (myabs(nowr - radio) < mind) {
                     mind = myabs(nowr - radio);
                     min1 = i;
                     min2 = j;
@@ -185,10 +185,10 @@ void Robot::moveRotate(bool isLeft, float radius, float arc)
         int min1 = 0, min2 = 0, mind = 10000;
         float radio = (radius + DIST_BETWEEN_WHEELS / 2) / (radius - DIST_BETWEEN_WHEELS / 2);
         float nowr;
-        for (int i = 2; i <= 30; i++)
+        for (int i = 30; i >= 2; i--)
             for (int j = 1; j < i; j++) {
                 nowr = i *1.0 / j;
-                if (myabs(nowr - radio) <= mind) {
+                if (myabs(nowr - radio) < mind) {
                     mind = myabs(nowr - radio);
                     min1 = i;
                     min2 = j;
@@ -206,20 +206,26 @@ void Robot::moveTo(const cv::Point2f& wCoord,float max_speed)
 {
     cv::Point2f robotPosition(x,y);
     cv::Point2f delta = wCoord - robotPosition;
+    //printf("%f %f\n", wCoord.x, wCoord.y);
+    //printf("%f %f\n", delta.x, delta.y);
     float delta_len = length(delta);
+    if (delta_len <= 0)
+        return;
     cv::Point2f new_dir = delta*(1/delta_len);
+
     rotateTo(new_dir);
     moveForward(delta_len,max_speed);
 }
 
 void Robot::rotateTo(const cv::Point2f &new_dir)
 {
+    //printf("%f %f\n", new_dir.x, new_dir.y);
     cv::Point2f dir(sin(ori),cos(ori));
     float cross = dir.x*new_dir.y-dir.y*new_dir.x;
     float dot = new_dir.dot(dir);
     dot = dot>1?1:(dot<-1?-1:dot);
     float angle = acos(dot);
-    printf("angle = %f\n",angle);
+    //printf("angle = %f\n",angle);
     if(cross<0)
         turnRight(angle*180/M_PI);
     else
@@ -235,8 +241,11 @@ void Robot::updateBallStatus()
     getImage();
     clock_gettime(CLOCK_REALTIME,&t0);
     ballLocated=false;
-    ballTracker.pushFrame(image_l,double(t0.tv_nsec)/(1e9));
-    printf("t = %f\n",double(t0.tv_nsec)/(1e9));
+    double temptime=double(t0.tv_sec-timeBase.tv_sec)+double(t0.tv_nsec-timeBase.tv_nsec)/(1e9);
+    timeBase=t0;
+    ballTracker.pushFrame(image_l,temptime);
+    ballTracker.pos[0].z=0;
+    printf("t = %f\n",temptime);
     printf("images.size=%d before processing.\n",ballTracker.images.size());
     int ret;
     if(ballTracker.pos.size()==2)
@@ -255,7 +264,7 @@ void Robot::updateBallStatus()
             //ballTracker.popFrame(ballTracker.images.size()-1);
         //continue;
     }
-    if(ballTracker.images.size()>=2)
+    /*if(ballTracker.images.size()>=2)
     {
         if(ballTracker.pos[1]==cv::Point3f(-1,-1,-1))
         {
@@ -272,10 +281,20 @@ void Robot::updateBallStatus()
             ballTracker.popFrame(1);
             return;
         }
+    }*/
+    for(int i=0;i<ballTracker.images.size();++i)
+    {
+        if(ballTracker.pos[i]==cv::Point3f(-1,-1,-1))
+        {
+            ballTracker.popFrame(ballTracker.images.size());
+            break;
+        }
     }
     printf("images.size=%d\n",ballTracker.images.size());
     if(ballTracker.images.size()!=2 || ret!=2)
         return;
+    //if(ballTracker.pos[1].z<ballTracker.pos[0].z)
+        //return;
     ballPosition.x=ballTracker.pos[1].x;
     ballPosition.y=ballTracker.pos[1].y;
     ballVelocity.x=(ballTracker.pos[1].x-ballTracker.pos[0].x)/(ballTracker.pos[1].z-ballTracker.pos[0].z);
@@ -460,10 +479,11 @@ void Robot::spin() {//}std::vector<cv::Point2f> balls) {
     //printf("find %d balls\n", balls.size());
     //if (balls.size() < 2)
      //   return;
-    std::vector<cv::Point2f> ans = findMulBall();
-    cv::Point2f ball1 = ans[0];// = balls[0];
-    cv::Point2f ball2 = ans[1];// = balls[1];
+    //std::vector<cv::Point2f> ans = findMulBall();
+    cv::Point2f ball1(0, -50);// = ans[0];// = balls[0];
+    cv::Point2f ball2(0, 0);// = ans[1];// = balls[1];
     printf("%f %f\n %f %f\n", ball1.x, ball1.y, ball2.x, ball2.y);
+    //cvWaitKey();
     //get them by some means of find balls
     float delta =  20;
     float r12 =  cal_distance(ball1, ball2) / 2;
@@ -473,6 +493,7 @@ void Robot::spin() {//}std::vector<cv::Point2f> balls) {
     while(inrspin < rspin)
         inrspin++;
     printf("rspin:%f, disr1:%f, inrspin:%d\n", rspin, disr1, inrspin);
+    //cvWaitKey();
     cv::Point2f rto1 = ball1 - robot_coord;
     cv::Point2f b1to2 = ball2 - ball1;
 
@@ -480,14 +501,18 @@ void Robot::spin() {//}std::vector<cv::Point2f> balls) {
     //float turn = a.x * b.y - a.y * b.x;
     //printf("a.x:%f, a.y:%f\n", a.x, a.y);
     //cvWaitKey();
-    cv::Point2f pturn1(ball1.x -  b1to2.x, ball1.y - b1to2.y);
+    cv::Point2f pturn1(ball1.x -  b1to2.x * 0.51, ball1.y - b1to2.y *0.51);
     cv::Point2f pturn2(ball1.x -  b1to2.x / 2, ball1.y - b1to2.y / 2);
+     printf("%f %f\n %f %f\n", pturn1.x, pturn1.y, pturn2.x, pturn2.y);
+     //cvWaitKey();
     moveTo(pturn1, 20);
+    //cvWaitKey();
     moveTo(pturn2, 20);
-    turnRight(arc);
-    moveRotate(true, rspin, arc * 2);
-
-    moveRotate(false, rspin, arc * 2);
+    turnRight(arc * 180 / M_PI);
+    //cvWaitKey()
+    moveRotate(true, rspin, arc);//!!!
+    cvWaitKey();
+    moveRotate(false, rspin, arc);
     /*if (turn > 0) {
         turnRight(arc);
         moveRotate(true, inrspin, 2 * M_PI - arc);
