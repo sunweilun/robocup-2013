@@ -4,6 +4,37 @@
 
 #define MAX_POINTS 100
 
+IplImage* enlarge(const IplImage *orig_image)
+{
+    IplImage *image = cvCreateImage(cvSize(orig_image->width<<1,orig_image->height<<1),IPL_DEPTH_8U,3);
+    for(int x=0;x<image->width;x++)
+    {
+        for(int y=0;y<image->height;y++)
+        {
+            float real_x = x*0.5;
+            float real_y = y*0.5;
+            int min_x = x>>1;
+            int max_x = min_x+1;
+            int min_y = x>>1;
+            int max_y = min_y+1;
+            float u = real_x - min_x;
+            float v = real_y - min_y;
+            float color[3];
+            for(int k=0;k<3;k++)
+            {
+                color[k] = (unsigned char)(image->imageData[(min_y*image->width+min_x)*3+k])*(1-u)*(1-v);
+                color[k] += (unsigned char)(image->imageData[(min_y*image->width+max_x)*3+k])*u*(1-v);
+                color[k] += (unsigned char)(image->imageData[(max_y*image->width+max_x)*3+k])*u*v;
+                color[k] += (unsigned char)(image->imageData[(max_y*image->width+min_x)*3+k])*(1-u)*v;
+            }
+            image->imageData[(y*image->width+x)*3] = char((unsigned char)(color[0]));
+            image->imageData[(y*image->width+x)*3+1] = char((unsigned char)(color[1]));
+            image->imageData[(y*image->width+x)*3+2] = char((unsigned char)(color[2]));
+        }
+    }
+    return image;
+}
+
 void mouse_cb(int event,int x,int y,int flags,void* param)
 {
     void** ptrs = (void**) param;
@@ -11,13 +42,15 @@ void mouse_cb(int event,int x,int y,int flags,void* param)
     CvPoint* rc = (CvPoint*) ptrs[1];
     int *np = (int*) ptrs[2];
     bool *next = (bool*) ptrs[3];
-    IplImage *image = (IplImage*) ptrs[4];
+    IplImage *orig_image = (IplImage*) ptrs[4];
+    IplImage *image = enlarge(orig_image);
+
     switch(event)
     {
     case CV_EVENT_LBUTTONDOWN:
         printf("NewPoint:\n    (x,y):");
-        sc[*np].x = x;
-        sc[*np].y = y;
+        sc[*np].x = x>>1;
+        sc[*np].y = y>>1;
         cvCircle(image,sc[*np],3,CV_RGB(255,255,0));
         cvShowImage("Calib",image);
         cvWaitKey(100);
@@ -31,6 +64,7 @@ void mouse_cb(int event,int x,int y,int flags,void* param)
         *next = false;
         break;
     }
+    cvReleaseImage(&image);
 }
 
 //*************Calculate TransMatrix Start****************
