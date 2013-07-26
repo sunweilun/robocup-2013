@@ -1,5 +1,5 @@
 #define DEBUG_MAP 0
-#define MIN_BALL_SPEED_TO_KEEP 10
+#define MIN_BALL_SPEED_TO_KEEP 20
 #define KEEPER_DIST2GOAL 50
 #define EXTRA_WAIT_TIME 3
 
@@ -61,8 +61,8 @@
 #define BALL_V_LB 0.23
 #define BALL_V_UB 0.58
 
-#define BALL_MOVING_H_LB 235
-#define BALL_MOVING_H_UB 331
+#define BALL_MOVING_H_LB 250
+#define BALL_MOVING_H_UB 300
 #define BALL_MOVING_S_LB 0.1
 #define BALL_MOVING_S_UB 0.5
 #define BALL_MOVING_V_LB 0.15

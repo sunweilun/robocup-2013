@@ -118,7 +118,7 @@ cv::Point2f WorldMap::coord_robot2world(const cv::Point2f& rCoord)
     cv::Point2f wCoord;
     wCoord.x = robot->x+rCoord.x*cos(robot->ori)+rCoord.y*sin(robot->ori);
     wCoord.y = robot->y-rCoord.x*sin(robot->ori)+rCoord.y*cos(robot->ori);
-    printf("in r2w: robot=(%f,%f) ori=%f \n",robot->x,robot->y,robot->ori);
+    //printf("in r2w: robot=(%f,%f) ori=%f \n",robot->x,robot->y,robot->ori);
     return wCoord;
 }
 

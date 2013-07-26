@@ -68,7 +68,8 @@ int BallTracker::processFrame(int frameId)
 	if(images.size()==1)
 	{
         //printf("if_1\n");
-		pos_scr[frameId]=ballDetect(images[frameId]);
+		if(pos_scr[frameId]==cv::Point3f(-1,-1,-1))
+            pos_scr[frameId]=ballDetect(images[frameId]);
 		if(pos_scr[frameId]==cv::Point3f(-1,-1,-1))
 			return -1;
         scr2wld(frameId);
@@ -77,6 +78,7 @@ int BallTracker::processFrame(int frameId)
 	if(frameId==0)
 	{
 	//printf("if_2\n");
+		if(pos_scr[frameId]==cv::Point3f(-1,-1,-1))
 		pos_scr[frameId]=ballDetect(images[frameId]);
 			//printf("if_2_1\n");
 		if(pos_scr[frameId]==cv::Point3f(-1,-1,-1))
@@ -96,6 +98,7 @@ int BallTracker::processFrame(int frameId)
 	{
 	//printf("if_3\n");
 	//printf("pos_scr.size=%d images.size=%d frameId=%d\n",pos_scr.size(),images.size(),frameId);
+		if(pos_scr[frameId]==cv::Point3f(-1,-1,-1))
 		pos_scr[frameId]=ballDetect(images[frameId]);
 			//printf("if_3_1\n");
 		if(pos_scr[frameId]==cv::Point3f(-1,-1,-1))
@@ -142,10 +145,10 @@ cv::Point3f BallTracker::ballDetect(const IplImage* image1)
 			++sum;
 		}
 	}
-    cvNamedWindow("tempImage1");
-	if(images.size()>1)
-      cvShowImage("tempImage1",bina);
-	cvWaitKey(10);
+    //cvNamedWindow("tempImage1");
+	//if(images.size()>1)
+      //cvShowImage("tempImage1",bina);
+	//cvWaitKey(10);
 
     //clock_gettime(CLOCK_REALTIME,&te);
     //printf("!!---2 time = %f\n",double(te.tv_nsec-ts.tv_nsec)/(1e9));
@@ -246,7 +249,7 @@ cv::Point3f BallTracker::ballDetect(const IplImage* image1)
 	//clock_gettime(CLOCK_REALTIME,&ts);
 	if(areas.size()>0)
 	{
-	printf("areas.size=%d\n",areas.size());
+	//printf("areas.size=%d\n",areas.size());
 		    CvRect bBox=robot->worldMap.getMap_bbox();
 		int mx=0;
 		for(int i=0;i<areas.size();++i)
@@ -268,12 +271,12 @@ cv::Point3f BallTracker::ballDetect(const IplImage* image1)
 				mx=i;
                 }
 		}
-		printf("best area found. mx=%d pos=(%f,%f) r=%f\n",mx,areas[mx].x,areas[mx].y,(areas[mx].ymax-areas[mx].ymin)/2.0);
+		//printf("best area found. mx=%d pos=(%f,%f) r=%f\n",mx,areas[mx].x,areas[mx].y,(areas[mx].ymax-areas[mx].ymin)/2.0);
 		    cv::Point2f scrPos(areas[mx].x,areas[mx].y);
 		    cv::Point2f roboPos=robot->worldMap.coord_screen2robot(scrPos,false);
 		    cv::Point2f worldPos=robot->worldMap.coord_robot2world(roboPos);
 		    cv::Point2f imgPos=robot->world2image(worldPos);
-		printf("best area roboPos=(%f,%f) worldPos=(%f,%f) imgPos=(%f,%f)\n",roboPos.x,roboPos.y,worldPos.x,worldPos.y,imgPos.x,imgPos.y);
+		//printf("best area roboPos=(%f,%f) worldPos=(%f,%f) imgPos=(%f,%f)\n",roboPos.x,roboPos.y,worldPos.x,worldPos.y,imgPos.x,imgPos.y);
 
 
     //clock_gettime(CLOCK_REALTIME,&te);

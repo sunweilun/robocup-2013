@@ -72,21 +72,16 @@ void Robot::turnRight(float angle)
 
 void Robot::drawMap()
 {
-    printf("in\n");
     getImage();
-    printf("out\n");
     for(int i=0; i<12; i++)
     {
         getImage();
-        cvNamedWindow("src", CV_WINDOW_AUTOSIZE);
-        cvMoveWindow("src", 512, 512);
-        cvShowImage("src", image_r);
+        //cvNamedWindow("src", CV_WINDOW_AUTOSIZE);
+        //cvMoveWindow("src", 512, 512);
+        //cvShowImage("src", image_r);
         cvWaitKey(100);
-
-        printf("draw start\n");
         worldMap.updateMap(image_r);
         locateOwnGate();
-        printf("draw finish\n");
         turnRight(30);
     }
     /*moveForward(200, 20);
@@ -260,8 +255,18 @@ void Robot::updateBallStatus()
     timeBase=t0;
     ballTracker.pushFrame(image_l,temptime);
     ballTracker.pos[0].z=0;
-    printf("t = %f\n",temptime);
-    printf("images.size=%d before processing.\n",ballTracker.images.size());
+    //printf("t = %f\n",temptime);
+    //printf("images.size=%d before processing.\n",ballTracker.images.size());
+    if(ballTracker.images.size()==3)
+    {
+        printf("pos_scr[]=");
+        for(int i=0;i<ballTracker.images.size();++i)
+            printf("(%f,%f,%f)",ballTracker.pos_scr[i].x,ballTracker.pos_scr[i].y,ballTracker.pos_scr[i].z);
+        printf("pos[]=");
+        for(int i=0;i<ballTracker.images.size();++i)
+            printf("(%f,%f,%f)",ballTracker.pos[i].x,ballTracker.pos[i].y,ballTracker.pos[i].z);
+        printf("---------------------------------\n");
+    }
     int ret;
     if(ballTracker.pos.size()==2)
         ret=ballTracker.processFrame(1);
@@ -269,6 +274,11 @@ void Robot::updateBallStatus()
         ret=ballTracker.processFrame(0);
     else
     {
+    if(ballTracker.images.size()>0)
+     {
+            cvShowImage("leftImage",ballTracker.images[ballTracker.images.size()-1]);
+    cvWaitKey(10);
+    }
         ballTracker.popFrame(ballTracker.images.size());
         return;
     }
@@ -301,13 +311,35 @@ void Robot::updateBallStatus()
     {
         if(ballTracker.pos[i]==cv::Point3f(-1,-1,-1))
         {
+    if(ballTracker.images.size()>0)
+      {
+            cvShowImage("leftImage",ballTracker.images[ballTracker.images.size()-1]);
+    cvWaitKey(10);
+    }
             ballTracker.popFrame(ballTracker.images.size());
             break;
         }
     }
-    printf("images.size=%d\n",ballTracker.images.size());
-    if(ballTracker.images.size()!=2 || ret!=2)
+    //printf("images.size=%d\n",ballTracker.images.size());
+    if(ballTracker.images.size()!=2)
+    {
+    if(ballTracker.images.size()>0)
+     {
+            cvShowImage("leftImage",ballTracker.images[ballTracker.images.size()-1]);
+    cvWaitKey(10);
+    }
         return;
+    }
+    if(ret!=2)
+    {
+    if(ballTracker.images.size()>0)
+    {
+            cvShowImage("leftImage",ballTracker.images[ballTracker.images.size()-1]);
+    cvWaitKey(10);
+    }
+        ballTracker.popFrame(1);
+        return;
+    }
     //if(ballTracker.pos[1].z<ballTracker.pos[0].z)
         //return;
     ballPosition.x=ballTracker.pos[1].x;
@@ -315,8 +347,8 @@ void Robot::updateBallStatus()
     ballVelocity.x=(ballTracker.pos[1].x-ballTracker.pos[0].x)/(ballTracker.pos[1].z-ballTracker.pos[0].z);
     ballVelocity.y=(ballTracker.pos[1].y-ballTracker.pos[0].y)/(ballTracker.pos[1].z-ballTracker.pos[0].z);
     ballLocated=true;
-    printf("ball: world pos=(%f,%f) v=(%f,%f)\n",ballTracker.pos[1].x,ballTracker.pos[1].y,ballVelocity.x,ballVelocity.y);
-    printf("showing\n");
+    //printf("ball: world pos=(%f,%f) v=(%f,%f)\n",ballTracker.pos[1].x,ballTracker.pos[1].y,ballVelocity.x,ballVelocity.y);
+    //printf("showing\n");
 
     cvCircle(ballTracker.images[1],cvPoint(ballTracker.pos_scr[1].x,ballTracker.pos_scr[1].y),ballTracker.pos_scr[1].z,CV_RGB(255,255,0),2);
     cvNamedWindow("leftImage");
@@ -324,10 +356,10 @@ void Robot::updateBallStatus()
     cvShowImage("leftImage",ballTracker.images[1]);
     cvWaitKey(10);
     //cvDestroyWindow("leftImage");
-    cvNamedWindow("image_l");
-    cvMoveWindow("image_l",512,512);
-    cvShowImage("image_l",image_l);
-    cvWaitKey(10);
+    //cvNamedWindow("image_l");
+    //cvMoveWindow("image_l",512,512);
+    //cvShowImage("image_l",image_l);
+    //cvWaitKey(10);
     //cvDestroyWindow("image_l");
     //if(ballTracker.images.size()>1)
     {
@@ -351,7 +383,7 @@ void* keeperMotionThread(void* params)
         moveDist += v_level*DELTA_V*DELTA_T/float(1e6);
         v_level += getAcc(v_level,targetDist-moveDist);
         sendAA(v_level*DELTA_V,v_level*DELTA_V);
-        printf("dist = %f\n",targetDist-moveDist);
+        //printf("dist = %f\n",targetDist-moveDist);
         usleep(DELTA_T);
     }
 }
