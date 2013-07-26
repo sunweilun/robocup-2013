@@ -62,7 +62,7 @@ static pthread_mutex_t ca_mutex;
  * 使设备工作的函数，即使能作用
  */
 
-int enable_device(struct vd_capture * vd_cap) {
+static int enable_device(struct vd_capture * vd_cap) {
 	int type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
 	int rval;
 
@@ -79,7 +79,7 @@ int enable_device(struct vd_capture * vd_cap) {
  *
  * 使设备无法工作的函数，即起到禁止的作用
  */
-int disable_device(struct vd_capture * vd_cap) {
+static int disable_device(struct vd_capture * vd_cap) {
 	int type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
 	int rval;
 	rval=ioctl(vd_cap->fd, VIDIOC_STREAMOFF, &type);
@@ -91,7 +91,7 @@ int disable_device(struct vd_capture * vd_cap) {
 	return 0;
 }
 
-int init_data(struct vd_capture *vd_cap,
+static int init_data(struct vd_capture *vd_cap,
 	       char *dev_name,
 	       unsigned int fps,
 	       unsigned int width,
@@ -128,7 +128,7 @@ int init_data(struct vd_capture *vd_cap,
 		return -1;
 }
 
-int init_device(struct vd_capture *vd_cap) {
+static int init_device(struct vd_capture *vd_cap) {
 	int rval=0;
 	int i = 0;
 	//验证参数的合法性.需要指定的设备存在
@@ -236,7 +236,7 @@ int init_device(struct vd_capture *vd_cap) {
 		return -1;
 }
 
-int capture(struct vd_capture *vd_cap) {
+static int capture(struct vd_capture *vd_cap) {
     //printf("cap!\n");
 	int rval=0, capturedsize=0;
 	if(!vd_cap->streaming)
@@ -287,7 +287,7 @@ int capture(struct vd_capture *vd_cap) {
  *
  * 关闭视频设备
  */
-int close_device(struct vd_capture * vd_cap) {
+static int close_device(struct vd_capture * vd_cap) {
 	if (vd_cap->streaming) disable_device(vd_cap);
 	//if (vd_cap->decbuffer) free(vd_cap->decbuffer);
 	if (vd_cap->fd) close(vd_cap->fd);
@@ -299,7 +299,7 @@ int close_device(struct vd_capture * vd_cap) {
 }
 
 
-void init_video_work(struct vd_capture* c, int framerate, char * instrument_path) {
+static void init_video_work(struct vd_capture* c, int framerate, char * instrument_path) {
 	if(c == NULL) {
 		//mylogfd(2,"[Version] When get the memory for vd_cap\n");
 		exit(1);
@@ -315,15 +315,7 @@ void init_video_work(struct vd_capture* c, int framerate, char * instrument_path
 	}
 }
 
-void* myInit(void* arg) {
-    int framerate = 20;
-	pthread_mutex_init(&ca_mutex, NULL);
-
-	c1 = (struct vd_capture*) calloc(1, sizeof(struct vd_capture));
-	init_video_work(c1, framerate, "/dev/video2");
-	c2 = (struct vd_capture*) calloc(1, sizeof(struct vd_capture));
-	init_video_work(c2, framerate, "/dev/video1");
-
+static void* myInit(void* arg) {
 	int captured1, captured2;
 	while(!c1->quit && !c2->quit) {
 		//开始采集视频数据
@@ -341,14 +333,21 @@ void* myInit(void* arg) {
 	}
 }
 
-void  ptInit() {
+static void  ptInit() {
+    pthread_mutex_init(&ca_mutex, NULL);
+    int framerate = 20;
+	c1 = (struct vd_capture*) calloc(1, sizeof(struct vd_capture));
+	init_video_work(c1, framerate, "/dev/video2");
+	c2 = (struct vd_capture*) calloc(1, sizeof(struct vd_capture));
+	init_video_work(c2, framerate, "/dev/video1");
+
     pthread_t pt;
     pthread_create(&pt, NULL, myInit, NULL);
     usleep(2000);
 
 }
 
-void getPhoto2(IplImage *image_l, IplImage *image_r) {
+static void getPhoto2(IplImage *image_l, IplImage *image_r) {
 	unsigned char tmpbuf[2][250000];
 
 	usleep(2000);

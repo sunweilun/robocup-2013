@@ -1,6 +1,5 @@
 #include "Robot.h"
 #include "motor_uplayer.h"
-#include "getPhoto2.h"
 #include <math.h>
 
 Robot::Robot()
@@ -107,14 +106,11 @@ void Robot::drawMap()
 
 void Robot::getImage()
 {
-    usleep(SLEEPTIME_BEFORE_PHOTO); // sleep until the camera is still
     if(!image_l)
         image_l = cvCreateImage(cvSize(width,height),IPL_DEPTH_8U,3);
     if(!image_r)
         image_r = cvCreateImage(cvSize(width,height),IPL_DEPTH_8U,3);
-    //printf("getPhoto begin\n");
     getPhoto2(image_l, image_r);
-    //printf("getPhoto end\n");
     cvCvtColor(image_l,image_l,CV_RGB2BGR);
     cvCvtColor(image_r,image_r,CV_RGB2BGR);
 }
@@ -790,5 +786,175 @@ bool Robot::locateOwnGate()
         }
         cvReleaseImage(&wMap);
         return true;
+    }
+}
+int Robot::init_socket(const char* ipStr, const int host){
+    int socket_fd;
+    struct sockaddr_in s_add;
+    socket_fd = socket(AF_INET, SOCK_STREAM, 0);
+	if(-1 == socket_fd){
+		printf("socket fail \n");
+		exit(-1);
+	}
+	//printf("socket ok \n");
+
+	memset(&s_add, 0, sizeof(s_add));
+	s_add.sin_family = AF_INET;
+	s_add.sin_addr.s_addr = inet_addr(ipStr);
+	s_add.sin_port = htons(host);
+
+	//printf("s_addr = %#x ,port : %#x\r\n",s_add.sin_addr.s_addr,s_add.sin_port);
+
+	if(-1 == connect(socket_fd,(struct sockaddr *)(&s_add), sizeof(struct sockaddr))){
+		printf("connect fail \n");
+		return 0;
+	}
+
+	printf("connect ok !\n");
+    return socket_fd;
+}
+
+void  Robot::listenAndAct(int socket_fd){
+
+    if(socket_fd){
+        int recvbytes = 0;
+        int BUFFER_SIZE = 2048;
+        char read_buff[BUFFER_SIZE];
+
+        while(1){
+            bzero(read_buff, sizeof(read_buff));
+            if(-1 == (recvbytes = recv(socket_fd,read_buff,BUFFER_SIZE, 0))){
+                printf("read data fail \n");
+            }
+            else
+            {
+                string recvCmd(read_buff);
+
+                if(recvCmd == "scan"){
+                    printf("receive scan\n");
+                    //do something
+                    drawMap();
+                    char tmp[BUFFER_SIZE];
+                    strcpy(tmp, "scan_ack");
+                    if (send(socket_fd, tmp, (int)strlen(tmp), 0) < 0){
+                        printf("send scan_ack fail\n");
+                    }
+                    else{
+                        printf("send scan_ack success\n");
+                    }
+                }
+                else if(recvCmd == "ball"){
+                    printf("receive ball\n");
+                    //do something
+                    keepGoal();
+                    char tmp[BUFFER_SIZE];
+                    strcpy(tmp, "ball_ack");
+                    if (send(socket_fd, tmp, (int)strlen(tmp), 0) < 0){
+                        printf("send ball_ack fail\n");
+                    }
+                    else{
+                        printf("send ball_ack success\n");
+                    }
+                }
+                else if(recvCmd == "shoot"){
+                    printf("receive shoot\n");
+                    //do something
+                    shoot();
+                    char tmp[BUFFER_SIZE];
+                    strcpy(tmp, "shoot_ack");
+                    if (send(socket_fd, tmp, (int)strlen(tmp), 0) < 0){
+                        printf("send shoot_ack fail\n");
+                    }
+                    else{
+                        printf("send shoot_ack success\n");
+                    }
+                }
+                else if(recvCmd == "exit"){
+                    printf("receive exit\n");
+                    close(socket_fd);
+                    break;
+                }
+                else if(recvCmd == "pic"){
+                    char cmd[200];
+                    bzero(cmd, sizeof(cmd));
+                    strcpy(cmd, "sendpicstart");
+                    if(send(socket_fd, cmd, (int)strlen(cmd), 0) < 0){
+                        printf("send start cmd fail\n");
+                        continue;
+                    }
+                    if(-1 == (recvbytes = recv(socket_fd,read_buff,BUFFER_SIZE, 0))){
+                        printf("receive start cmd ack fail\n");
+                        continue;
+                    }
+                    if(strcmp(read_buff, "fileack") != 0){
+                        printf("receive not fileack\n");
+                        continue;
+                    }
+
+                    int sendContent = 1;
+                    int width = 128, height = 128;
+                    IplImage* src = cvLoadImage("Radar.png");
+                    if(src == NULL){
+                        printf("no Radar.png\n");
+                        continue;
+                    }
+                    int dst_width = 128, dst_height = 128;
+                    IplImage* img = cvCreateImage(cvSize(dst_width, dst_height), src->depth, 3);
+                    cvResize(src, img, CV_INTER_LINEAR);
+
+                    uchar* img_data = (uchar *)img->imageData;
+
+                    int sendRgbSize = 128*3;
+                    int dataCharSize = width*height*3*3;
+                    int sendCharSize = 128*3*3;
+                    int sendTime = dataCharSize/sendCharSize;
+                    printf("sendTime: %d\n", sendTime);
+
+                    uchar sendChardata[sendCharSize];
+                    for(int i = 0; i < sendTime; i++){
+                        bzero(sendChardata, sendCharSize);
+                        for(int j = 0; j < sendRgbSize; j++){
+                            int x = (int)img_data[i*sendRgbSize+j];
+                            sendChardata[j*3+0] = x/100+'0';
+                            sendChardata[j*3+1] = (x%100)/10+'0';
+                            sendChardata[j*3+2] = (x%10)+'0';
+                        }
+                        //cout << i << endl;
+
+                        if(send(socket_fd, sendChardata, sendCharSize, 0) < 0){
+                            printf("%d send rgb_data fail\n", i);
+                            sendContent = 0;
+                            break;
+                        }
+
+                        //cout << i << " send rgb_data success" << endl;
+                        if(-1 == (recvbytes = recv(socket_fd,read_buff,BUFFER_SIZE, 0))){
+                            printf("%d receive data ack fail\n", i);
+                            sendContent = 0;
+                            break;
+                        }
+                        if(strcmp(read_buff, "fileack") != 0){
+                            printf("%d receive not ackfile\n", i);
+                            sendContent = 0;
+                            break;
+                        }
+                    }
+                    if(sendContent == 0){
+                        printf("sendContent = false\n");
+                        continue;
+                    }
+                    bzero(cmd, sizeof(cmd));
+                    strcpy(cmd, "sendpicfinish");
+                    if(send(socket_fd, cmd, (int)strlen(cmd), 0) < 0){
+                        printf("send file finish fail\n");
+                        continue;
+                    }
+                    printf("data all send\n");
+                    cvReleaseImage(&src);
+                    cvReleaseImage(&img);
+                }//else if
+
+            }//else
+        }
     }
 }

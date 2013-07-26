@@ -18,7 +18,6 @@
 
 #define TIME_DELAY 1.00
 #define ARC_DELAY 0.5*3.1415926/180
-#define SPEED_LIMIT 50
 
 int fd;
 struct termios tio;

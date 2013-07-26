@@ -5,8 +5,9 @@
 
 #define DELTA_T 100000
 #define DELTA_V 5
+#define SPEED_LIMIT 50
 
-#define MAX_SPEED_LEVEL (50.0/DELTA_V)
+#define MAX_SPEED_LEVEL (SPEED_LIMIT/DELTA_V)
 
 #define GOAL_WIDTH_DELTA 10
 

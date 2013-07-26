@@ -2,9 +2,18 @@
 #define ROBOT_H
 #include "WorldMap.h"
 #include "BallTracker.h"
+#include "getPhoto2.h"
 #include <stdio.h>
 #include <sys/time.h>
-
+#include <stdlib.h>
+#include <string.h>
+#include <errno.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <unistd.h>
+#include <string>
 class Robot
 {
     friend class WorldMap;
@@ -53,6 +62,8 @@ public:
     void findBall(); // rotate until the target ball is located
     std::vector<cv::Point2f> findMulBall();
     ~Robot();
+    int init_socket(const char* ipStr, const int host);
+    void listenAndAct(int socket_fd);
 };
 
 #endif // ROBOT_H
