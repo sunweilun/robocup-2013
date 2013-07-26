@@ -3,7 +3,7 @@
 #define KEEPER_DIST2GOAL 50
 #define EXTRA_WAIT_TIME 3
 
-#define DELTA_T 10000
+#define DELTA_T 100000
 #define DELTA_V 5
 
 #define MAX_SPEED_LEVEL (50.0/DELTA_V)

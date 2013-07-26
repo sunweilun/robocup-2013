@@ -1,9 +1,10 @@
 #include "getPhoto2.h"
+#include <pthread.h>
 
-int init_data(struct vd_capture *vd_cap, 
-	       char *dev_name, 
+int init_data(struct vd_capture *vd_cap,
+	       char *dev_name,
 	       unsigned int fps,
-	       unsigned int width, 
+	       unsigned int width,
 	       unsigned int height,
 	       int format) {
 	if(vd_cap == NULL || dev_name == NULL) return -1;
@@ -39,6 +40,7 @@ int init_data(struct vd_capture *vd_cap,
 
 int init_device(struct vd_capture *vd_cap) {
 	int rval=0;
+	int i = 0;
 	//验证参数的合法性.需要指定的设备存在
 	if(vd_cap==NULL || vd_cap->dev_name==NULL) return -1;
 	//打开视频设备，获得相应的描述符
@@ -65,7 +67,7 @@ int init_device(struct vd_capture *vd_cap) {
 	}
 	//设置相应的属性值,即开始进行
 	//设备的初始化工作
-	
+
 	//设置格式
 	memset(&vd_cap->fmt, 0, sizeof(struct v4l2_format));
 	vd_cap->fmt.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
@@ -94,7 +96,7 @@ int init_device(struct vd_capture *vd_cap) {
 
 	//申请缓冲区
 	memset(&vd_cap->rbuf, 0, sizeof(struct v4l2_requestbuffers));
-	vd_cap->rbuf.count = NB_BUFFERS;
+	vd_cap->rbuf.count = 4;
 	vd_cap->rbuf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
 	vd_cap->rbuf.memory = V4L2_MEMORY_MMAP;
 
@@ -105,8 +107,8 @@ int init_device(struct vd_capture *vd_cap) {
 	}
 
 	//将主存的空间和设备的内存空间进行映射
-	int i=0;
-	for (i=0;i<NB_BUFFERS;i++) {
+	//int i=0;
+	for (i=0;i<4;i++) {
 		memset(&vd_cap->buf, 0, sizeof(struct v4l2_buffer));
 		vd_cap->buf.index = i;
 		vd_cap->buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
@@ -127,7 +129,7 @@ int init_device(struct vd_capture *vd_cap) {
 		}
 	}
 	//将buffer加入队列
-	for(i=0;i<NB_BUFFERS;i++) {
+	for(i=0;i<4;i++) {
 		memset(&vd_cap->buf, 0, sizeof(struct v4l2_buffer));
 		vd_cap->buf.index = i;
 		vd_cap->buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
@@ -148,7 +150,7 @@ int capture(struct vd_capture *vd_cap) {
 	int rval=0, capturedsize=0;
 	if(!vd_cap->streaming)
 	if(enable_device(vd_cap)) goto errcap;
-	
+
 	memset(&vd_cap->buf, 0, sizeof(struct v4l2_buffer));
 	vd_cap->buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
 	vd_cap->buf.memory = V4L2_MEMORY_MMAP;
@@ -161,7 +163,7 @@ int capture(struct vd_capture *vd_cap) {
 	capturedsize=vd_cap->buf.bytesused;
 	if(capturedsize > vd_cap->framesize) capturedsize=vd_cap->framesize;
 	switch(vd_cap->format) {
-	case V4L2_PIX_FMT_MJPEG: 
+	case V4L2_PIX_FMT_MJPEG:
 		if(vd_cap->buf.bytesused<0xaf) return 0;
 		//memcpy(vd_cap->framebuffer, vd_cap->mem[vd_cap->buf.index], (size_t) vd_cap->buf.bytesused);
 		/*if(jpeg_decode(&vd_cap->decbuffer, vd_cap->tmpbuffer, &vd_cap->width, &vd_cap->height)<0) {
@@ -171,7 +173,7 @@ int capture(struct vd_capture *vd_cap) {
 		yuv422to420p(vd_cap->decbuffer, vd_cap->framebuffer, vd_cap->width, vd_cap->height);*/
 		//break;
 	case V4L2_PIX_FMT_YUYV:
-		if(vd_cap->buf.bytesused > vd_cap->framesize) 
+		if(vd_cap->buf.bytesused > vd_cap->framesize)
 			memcpy(vd_cap->framebuffer, vd_cap->mem[vd_cap->buf.index], (size_t) vd_cap->framesize);
 		else memcpy(vd_cap->framebuffer, vd_cap->mem[vd_cap->buf.index], (size_t)vd_cap->buf.bytesused);
 		break;
@@ -213,7 +215,7 @@ int close_device(struct vd_capture * vd_cap) {
 int enable_device(struct vd_capture * vd_cap) {
 	int type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
 	int rval;
-	
+
 	rval=ioctl(vd_cap->fd, VIDIOC_STREAMON, &type);
 	if(rval < 0) {
 		printf("error when enable the device: %d \n", errno);
@@ -239,7 +241,7 @@ int disable_device(struct vd_capture * vd_cap) {
 	return 0;
 }
 
-void init_video_work(struct vd_capture* c, int framerate, char * instrument_path) {
+int init_video_work(struct vd_capture* c, int framerate, char * instrument_path) {
 	if(c == NULL) {
 		//mylogfd(2,"[Version] When get the memory for vd_cap\n");
 		exit(1);
@@ -253,9 +255,11 @@ void init_video_work(struct vd_capture* c, int framerate, char * instrument_path
 		//mylogfd(2,"[Version] When initial the device %s\n",instrument_path);
 		exit(1);
 	}
+	return 1;
 }
 
-void ptInit() {
+int  ptInit() {
+    int framerate = 20;
 	pthread_mutex_init(&ca_mutex, NULL);
 
 	c1 = (struct vd_capture*) calloc(1, sizeof(struct vd_capture));
@@ -278,9 +282,11 @@ void ptInit() {
 		pthread_mutex_unlock(&ca_mutex);
 		usleep(2000);
 	}
+
+    return 1;
 }
 
-void getPhoto2(IplImage *image_l, IplImage *image_r) {
+int getPhoto2(IplImage *image_l, IplImage *image_r) {
 	unsigned char tmpbuf[2][250000];
 
 	usleep(2000);
@@ -289,7 +295,7 @@ void getPhoto2(IplImage *image_l, IplImage *image_r) {
 	memcpy(tmpbuf[1], c2->framebuffer, (size_t)c2->framesize);
 	pthread_mutex_lock(&ca_mutex);
 	usleep(2000);
-	
+
 	struct jpeg_decompress_struct* jpeg_decompressor = newDecompressor ( MAX_NET_WIDTH );
 	long rgbbuffersize = 320*240*3;
 	unsigned char rgbbuffer[rgbbuffersize];
@@ -310,4 +316,6 @@ void getPhoto2(IplImage *image_l, IplImage *image_r) {
 			memcpy(image_r->imageData, rgbbuffer, rgbbuffersize);
 		}
 	}
+
+    return 1;
 }

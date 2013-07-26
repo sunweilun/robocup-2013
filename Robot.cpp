@@ -1,6 +1,6 @@
 #include "Robot.h"
 #include "motor_uplayer.h"
-#include "getPhoto.h"
+#include "getPhoto2.h"
 #include <math.h>
 
 Robot::Robot()
@@ -117,7 +117,9 @@ void Robot::getImage()
         image_l = cvCreateImage(cvSize(width,height),IPL_DEPTH_8U,3);
     if(!image_r)
         image_r = cvCreateImage(cvSize(width,height),IPL_DEPTH_8U,3);
-    getPhoto(image_l, image_r);
+    //printf("getPhoto begin\n");
+    getPhoto2(image_l, image_r);
+    //printf("getPhoto end\n");
     cvCvtColor(image_l,image_l,CV_RGB2BGR);
     cvCvtColor(image_r,image_r,CV_RGB2BGR);
 }
@@ -149,13 +151,18 @@ void Robot::moveRotate(bool isLeft, float radius, float arc)
         ori -= arc;
         ori = ori<0?ori+2*M_PI:(ori>2*M_PI?ori-2*M_PI:ori);
 
-        int min1 = 0, min2 = 0, mind = 10000;
+        int min1 = 0, min2 = 0;
+        float mind = 10000;
         float radio = (radius + DIST_BETWEEN_WHEELS / 2) / (radius - DIST_BETWEEN_WHEELS / 2);
+        //printf("%f\n", radio);
         float nowr;
         for (int i = 30; i >= 2; i--)
             for (int j = 1; j < i; j++) {
                 nowr = i *1.0 / j;
+                //printf("%f %d %d\n", nowr, i, j);
                 if (myabs(nowr - radio) < mind) {
+                    //printf("changed! %f < %f\n", myabs(nowr-radio) , mind);
+                    //cvWaitKey();
                     mind = myabs(nowr - radio);
                     min1 = i;
                     min2 = j;
@@ -163,7 +170,8 @@ void Robot::moveRotate(bool isLeft, float radius, float arc)
             }
             float t = (((arc - ARC_DELAY) * (radius + DIST_BETWEEN_WHEELS / 2) / min1)
                                 + ((arc - ARC_DELAY) * (radius - DIST_BETWEEN_WHEELS / 2) / min2)) / 2;
-            printf("%d %d %f", min1, min2, t);
+            //printf("%d %d %f", min1, min2, t);
+            //cvWaitKey();
             goWithSpeed(min2, min1, t);
     }
     else  //turn right
@@ -183,13 +191,18 @@ void Robot::moveRotate(bool isLeft, float radius, float arc)
         ori += arc;
         ori = ori<0?ori+2*M_PI:(ori>2*M_PI?ori-2*M_PI:ori);
 
-        int min1 = 0, min2 = 0, mind = 10000;
+        int min1 = 0, min2 = 0;
+        float mind = 10000;
         float radio = (radius + DIST_BETWEEN_WHEELS / 2) / (radius - DIST_BETWEEN_WHEELS / 2);
+        //printf("%f\n", radio);
         float nowr;
         for (int i = 30; i >= 2; i--)
             for (int j = 1; j < i; j++) {
                 nowr = i *1.0 / j;
+                //printf("%f %d %d\n", nowr, i, j);
                 if (myabs(nowr - radio) < mind) {
+                    //printf("changed! %f < %f\n", myabs(nowr-radio) , mind);
+                    //cvWaitKey();
                     mind = myabs(nowr - radio);
                     min1 = i;
                     min2 = j;
@@ -197,10 +210,10 @@ void Robot::moveRotate(bool isLeft, float radius, float arc)
             }
             float t = (((arc - ARC_DELAY) * (radius + DIST_BETWEEN_WHEELS / 2) / min1)
                                 + ((arc - ARC_DELAY) * (radius - DIST_BETWEEN_WHEELS / 2) / min2)) / 2;
-            printf("%d %d %f", min1, min2, t);
+            //printf("%d %d %f", min1, min2, t);
+            //cvWaitKey();
             goWithSpeed(min1, min2, t);
     }
-
 }
 
 
@@ -335,9 +348,10 @@ void* keeperMotionThread(void* params)
     Robot &robot= *((Robot*) paramsList[3]);
     while(!robot.abort)
     {
-        //moveDist += v_level*DELTA_V*DELTA_T/float(1e6);
+        moveDist += v_level*DELTA_V*DELTA_T/float(1e6);
         v_level += getAcc(v_level,targetDist-moveDist);
-       // sendAA(v_level*DELTA_V,v_level*DELTA_V);
+        sendAA(v_level*DELTA_V,v_level*DELTA_V);
+        printf("dist = %f\n",targetDist-moveDist);
         usleep(DELTA_T);
     }
 }
@@ -481,9 +495,9 @@ void Robot::spin() {//}std::vector<cv::Point2f> balls) {
     //printf("find %d balls\n", balls.size());
     //if (balls.size() < 2)
      //   return;
-    //std::vector<cv::Point2f> ans = findMulBall();
-    cv::Point2f ball1(0, -40);// = ans[0];// = balls[0];
-    cv::Point2f ball2(0, 80);// = ans[1];// = balls[1];
+    std::vector<cv::Point2f> ans = findMulBall();
+    cv::Point2f ball1 = ans[0];// = balls[0];
+    cv::Point2f ball2 = ans[1];// = balls[1];
     printf("%f %f\n %f %f\n", ball1.x, ball1.y, ball2.x, ball2.y);
     //cvWaitKey();
     //get them by some means of find balls
@@ -520,7 +534,7 @@ void Robot::spin() {//}std::vector<cv::Point2f> balls) {
     turnRight(arc * 180 / M_PI);
     //cvWaitKey()
     moveRotate(true, rspin, arc * 2);//!!!
-    cvWaitKey();
+    //cvWaitKey();
     moveRotate(false, rspin, arc * 2);
     /*if (turn > 0) {
         turnRight(arc);
@@ -659,7 +673,7 @@ Robot::~Robot()
         cvReleaseImage(&image_l);
     if(image_r)
         cvReleaseImage(&image_r);
-	ptEnd();
+	//ptEnd();
 }
 
 bool Robot::locateOwnGate()

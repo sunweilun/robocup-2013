@@ -10,15 +10,15 @@ int main()
 {
 #if ROBOTTEST
     Robot robot;
-    //robot.radarOn();
-    //robot.drawMap();
-    //robot.keepGoal();
+    robot.radarOn();
+    robot.drawMap();
+    robot.keepGoal();
     //robot.findBall();
     //robot.shoot();
     //robot.findBall();
     //robot.shoot();
     //robot.spin();
-    robot.moveRotate(true, 65, M_PI / 2);
+    //robot.moveRotate(true, 65, M_PI / 2);
     //robot.radarOff();
 
 
