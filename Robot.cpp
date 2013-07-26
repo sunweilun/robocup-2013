@@ -746,3 +746,9 @@ bool Robot::locateOwnGate()
         return true;
     }
 }
+
+void Robot::adjustWorldCoordinate()
+{
+
+    return;
+}

@@ -35,6 +35,7 @@ private:
     bool getBallInfo(cv::Point2f &ballVelocity,cv::Point2f &ballPosition);
     std::vector<cv::Point2f> shootRoute;
     void updateBallStatus();
+    void adjustWorldCoordinate();
 public:
     Robot();
     void keepGoal();
