@@ -83,25 +83,13 @@ void Robot::drawMap()
         locateOwnGate();
         turnRight(30);
     }
-    /*moveForward(200, 20);
+    moveForward(100, 20);
     for(int i=0;i<12;i++)
     {
         getImage();
-        printf("draw start\n");
-        worldMap.updateMap(image);
-        printf("draw finish\n");
+        worldMap.updateMap(image_r);
         turnRight(30);
-    }*/
-
-    //getImage();
-    //worldMap.updateMap(image);
-    //turnRight(180);
-    //getImage();
-    //worldMap.updateMap(image);
-    //moveForward(200,30);
-    //getImage();
-    // worldMap.updateMap(image);
-    //worldMap.saveMap("result.png");
+    }
 }
 
 void Robot::getImage()
@@ -374,6 +362,7 @@ void* keeperMotionThread(void* params)
     float &moveDist = *((float*) paramsList[1]);
     int &v_level= *((int*) paramsList[2]);
     Robot &robot= *((Robot*) paramsList[3]);
+    bool &kmt_abort = *((bool*) paramsList[4]);
     while(!robot.abort)
     {
         moveDist += v_level*DELTA_V*DELTA_T/float(1e6);
@@ -382,29 +371,39 @@ void* keeperMotionThread(void* params)
         //printf("dist = %f\n",targetDist-moveDist);
         usleep(DELTA_T);
     }
+    while(v_level)
+    {
+        v_level += v_level>0?-1:1;
+        sendAA(v_level*DELTA_V,v_level*DELTA_V);
+            //printf("dist = %f\n",targetDist-moveDist);
+        usleep(DELTA_T);
+    }
+    kmt_abort = true;
 }
 
 void Robot::keepGoal()
 {
     int v_level = 0;
     abort = false;
+    bool kmt_abort = false;
     cv::Point2f ballVelocity,ballPosition;
     bool vt_ballLocated;
     cv::Point2f keeper_center = ownGoal_coord + ownGoal_frontDir*KEEPER_DIST2GOAL;
     cv::Point2f keeper_dir(ownGoal_frontDir.y,-ownGoal_frontDir.x);
     moveTo(keeper_center,30);
     rotateTo(keeper_dir);
-    void *kmt_params[4];
-    float targetDist = 0;
+    void *kmt_params[5];
+    float targetDist = BOT_CENTER2CAM_CENTER;
     float moveDist = 0;
     kmt_params[0] = &targetDist;
     kmt_params[1] = &moveDist;
     kmt_params[2] = &v_level;
     kmt_params[3] = this;
+    kmt_params[4] = &kmt_abort;
     pthread_t km_thread;
     pthread_create(&km_thread,NULL,&keeperMotionThread,(void*)kmt_params);
     usleep(1000);
-    while(!abort)
+    while(!kmt_abort)
     {
         float temp_dist = moveDist;
         x = keeper_center.x+temp_dist*sin(ori);
@@ -434,7 +433,7 @@ void Robot::keepGoal()
         shootRoute.clear();
         shootRoute.push_back(cv::Point(x,y));
         shootRoute.push_back(moveToPoint);
-        targetDist = (moveToPoint - keeper_center).dot(keeper_dir);
+        targetDist = (moveToPoint - keeper_center).dot(keeper_dir)+BOT_CENTER2CAM_CENTER;
     }
 }
 
@@ -630,7 +629,7 @@ bool Robot::locateBall()
     ball_coord = worldMap.coord_robot2world(rCoord);
     CvRect bbox = worldMap.getMap_bbox();
     cv::Point2f ball_coord_img = world2image(ball_coord);
-    if(ball_coord_img.x>=bbox.x && ball_coord_img.x<=bbox.x+bbox.width && ball_coord_img.y>=bbox.y && ball_coord_img.y<=bbox.y+bbox.height)
+    if(ball_coord_img.x<bbox.x || ball_coord_img.x>bbox.x+bbox.width || ball_coord_img.y<bbox.y || ball_coord_img.y>bbox.y+bbox.height)
     {
         return false;
     }
@@ -792,6 +791,7 @@ int Robot::init_socket(const char* ipStr, const int host){
     int socket_fd;
     struct sockaddr_in s_add;
     socket_fd = socket(AF_INET, SOCK_STREAM, 0);
+
 	if(-1 == socket_fd){
 		printf("socket fail \n");
 		exit(-1);
@@ -811,11 +811,46 @@ int Robot::init_socket(const char* ipStr, const int host){
 	}
 
 	printf("connect ok !\n");
+	socket_robo =  socket_fd;
     return socket_fd;
 }
+void* stopKeeperThread(void * args){
+    Robot *rb = (Robot*) args;
+    int socket_fd = rb->socket_robo;
+     if(socket_fd){
+        int recvbytes = 0;
+        int BUFFER_SIZE = 2048;
+        char read_buff[BUFFER_SIZE];
+          while(1){
+            bzero(read_buff, sizeof(read_buff));
+            if(-1 == (recvbytes = recv(socket_fd,read_buff,BUFFER_SIZE, 0))){
+                printf("read data fail \n");
+            }
+            else
+            {
+                string recvCmd(read_buff);
 
-void  Robot::listenAndAct(int socket_fd){
-
+                if(recvCmd == "stopKeeper"){
+                    printf("receive scan\n");
+                    //do something
+                    rb->abort = true;
+                    char tmp[BUFFER_SIZE];
+                    strcpy(tmp, "stopKeeper_ack");
+                    if (send(socket_fd, tmp, (int)strlen(tmp), 0) < 0){
+                        printf("send stopKeeper_ack fail\n");
+                    }
+                    else{
+                        printf("send stopKeeper_ack success\n");
+                    }
+                    return NULL;
+                }//if
+            }//else
+        }//wile
+    }
+    return NULL;
+}
+void  Robot::listenAndAct(){
+    int socket_fd = socket_robo;
     if(socket_fd){
         int recvbytes = 0;
         int BUFFER_SIZE = 2048;
@@ -843,17 +878,19 @@ void  Robot::listenAndAct(int socket_fd){
                         printf("send scan_ack success\n");
                     }
                 }
-                else if(recvCmd == "ball"){
-                    printf("receive ball\n");
+                else if(recvCmd == "keeper"){
+                    printf("receive keeper\n");
                     //do something
+                    pthread_t t1;
+                    pthread_create(&t1, NULL, stopKeeperThread, this);
                     keepGoal();
                     char tmp[BUFFER_SIZE];
-                    strcpy(tmp, "ball_ack");
+                    strcpy(tmp, "keeper_ack");
                     if (send(socket_fd, tmp, (int)strlen(tmp), 0) < 0){
-                        printf("send ball_ack fail\n");
+                        printf("send keeper_ack fail\n");
                     }
                     else{
-                        printf("send ball_ack success\n");
+                        printf("send keeper_ack success\n");
                     }
                 }
                 else if(recvCmd == "shoot"){

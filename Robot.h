@@ -19,6 +19,7 @@ class Robot
     friend class WorldMap;
     friend class BallTracker;
     friend void* keeperMotionThread(void* params);
+    friend void*stopKeeperThread(void * args);
 private:
     timespec timeBase;
     bool abort;
@@ -63,7 +64,8 @@ public:
     std::vector<cv::Point2f> findMulBall();
     ~Robot();
     int init_socket(const char* ipStr, const int host);
-    void listenAndAct(int socket_fd);
+    void listenAndAct();
+    int socket_robo;
 };
 
 #endif // ROBOT_H

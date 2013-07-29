@@ -2,8 +2,8 @@
 #include "Robot.h"
 #include "calib.h"
 
-#define SOCKETBOT 0
-#define CALIB 1
+#define SOCKETBOT 1
+#define CALIB 0
 #define ROBOTTEST 0
 #define BALLTEST 0
 
@@ -13,7 +13,7 @@ int main()
     Robot robot;
     robot.radarOn();
     char ipStr[50];
-    strcpy(ipStr, "101.5.146.138");
+    strcpy(ipStr, "101.5.146.108");
     int host = 9999;
     int socket_fd = robot.init_socket(ipStr, host);
     if(socket_fd == 0){
@@ -21,16 +21,14 @@ int main()
         return 0;
     }
     if(socket_fd){
-        robot.listenAndAct(socket_fd);
+        robot.listenAndAct();
     }
 #endif
 #if ROBOTTEST
-    /*
     Robot robot;
     robot.radarOn();
     robot.drawMap();
     robot.keepGoal();
-  */
     //robot.findBall();
     //robot.shoot();
     //robot.findBall();

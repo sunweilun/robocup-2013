@@ -277,6 +277,10 @@ cv::Point3f BallTracker::ballDetect(const IplImage* image1)
 		    cv::Point2f worldPos=robot->worldMap.coord_robot2world(roboPos);
 		    cv::Point2f imgPos=robot->world2image(worldPos);
 		//printf("best area roboPos=(%f,%f) worldPos=(%f,%f) imgPos=(%f,%f)\n",roboPos.x,roboPos.y,worldPos.x,worldPos.y,imgPos.x,imgPos.y);
+		    if(!(imgPos.x>bBox.x && imgPos.x<bBox.x+bBox.width && imgPos.y>bBox.y && imgPos.y<bBox.y+bBox.height))
+		    {
+                return cv::Point3f(-1,-1,-1);
+		    }
 
 
     //clock_gettime(CLOCK_REALTIME,&te);
