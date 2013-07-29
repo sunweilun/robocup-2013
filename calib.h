@@ -1,8 +1,42 @@
 #pragma once
 
-#include "getPhoto.h"
+#include "getPhoto2.h"
 
 #define MAX_POINTS 100
+
+IplImage* enlarge(const IplImage *orig_image)
+{
+    IplImage *image = cvCreateImage(cvSize(orig_image->width<<1,orig_image->height<<1),IPL_DEPTH_8U,3);
+    for(int x=0;x<image->width;x++)
+    {
+        for(int y=0;y<image->height;y++)
+        {
+            float real_x = x*0.5;
+            float real_y = y*0.5;
+            int min_x = x>>1;
+            int max_x = min_x+1;
+            int min_y = y>>1;
+            int max_y = min_y+1;
+            float u = real_x - min_x;
+            float v = real_y - min_y;
+            float color[3];
+            for(int k=0;k<3;k++)
+            {
+                color[k] = (unsigned char)(orig_image->imageData[(min_y*orig_image->width+min_x)*3+k])*(1-u)*(1-v);
+                if(max_x<orig_image->width)
+                    color[k] += (unsigned char)(orig_image->imageData[(min_y*orig_image->width+max_x)*3+k])*u*(1-v);
+                if(max_y<orig_image->height && max_x<orig_image->width)
+                    color[k] += (unsigned char)(orig_image->imageData[(max_y*orig_image->width+max_x)*3+k])*u*v;
+                if(max_y<orig_image->height)
+                    color[k] += (unsigned char)(orig_image->imageData[(max_y*orig_image->width+min_x)*3+k])*(1-u)*v;
+            }
+            image->imageData[(y*image->width+x)*3] = char((unsigned char)(color[0]));
+            image->imageData[(y*image->width+x)*3+1] = char((unsigned char)(color[1]));
+            image->imageData[(y*image->width+x)*3+2] = char((unsigned char)(color[2]));
+        }
+    }
+    return image;
+}
 
 void mouse_cb(int event,int x,int y,int flags,void* param)
 {
@@ -12,17 +46,18 @@ void mouse_cb(int event,int x,int y,int flags,void* param)
     int *np = (int*) ptrs[2];
     bool *next = (bool*) ptrs[3];
     IplImage *image = (IplImage*) ptrs[4];
+
     switch(event)
     {
     case CV_EVENT_LBUTTONDOWN:
         printf("NewPoint:\n    (x,y):");
-        sc[*np].x = x;
-        sc[*np].y = y;
-        cvCircle(image,sc[*np],3,CV_RGB(255,255,0));
+        sc[*np].x = (x>>1);
+        sc[*np].y = (y>>1);
+        cvCircle(image,cvPoint(x,y),5,CV_RGB(255,255,0));
         cvShowImage("Calib",image);
         cvWaitKey(100);
         scanf("%d %d",&rc[*np].x,&rc[*np].y);
-        cvCircle(image,sc[*np],3,CV_RGB(0,0,255));
+        cvCircle(image,cvPoint(x,y),5,CV_RGB(0,0,255));
         (*np)++;
         //printf("*np=%d\n",*np);
         *next = true;
@@ -135,24 +170,17 @@ void calib(bool isRight)
     CvPoint sc[100],rc[100];
     int np = 0;
     bool next = true;
-    printf("in\n");
     ptInit();
-	printf("out\n");
-    /*
-	getPhoto();
-    printf("out\n");
-    char dp[] = DATA_PATH;
-    char fn[1024];
-    if (isRight)
-        sprintf(fn,"%s0_r.dat",dp);
-    else
-        sprintf(fn,"%s0_l.dat",dp);
-    IplImage* image = loadDatImage(fn);
-    */
-	IplImage *image_l, *image_r;
-    image_l = cvCreateImage(cvSize(width,height),IPL_DEPTH_8U,3);
-    image_r = cvCreateImage(cvSize(width,height),IPL_DEPTH_8U,3);
-	getPhoto(image_l, image_r);
+    usleep(1e5);
+	IplImage *orig_image_l, *orig_image_r;
+    orig_image_l = cvCreateImage(cvSize(width,height),IPL_DEPTH_8U,3);
+    orig_image_r = cvCreateImage(cvSize(width,height),IPL_DEPTH_8U,3);
+	getPhoto2(orig_image_l, orig_image_r);
+	getPhoto2(orig_image_l, orig_image_r);
+	cvCvtColor(orig_image_l,orig_image_l,CV_RGB2BGR);
+    cvCvtColor(orig_image_r,orig_image_r,CV_RGB2BGR);
+    IplImage* image_l = enlarge(orig_image_l);
+    IplImage* image_r = enlarge(orig_image_l);
     void* ptrs[5];
     ptrs[0] = (void*) sc;
     ptrs[1] = (void*) rc;
@@ -179,4 +207,8 @@ void calib(bool isRight)
     CalTransMat(Tran_Mat, np, sc, rc);
     printf("Transform Matrix:");
     PrintMat(Tran_Mat, isRight);
+    cvReleaseImage(&image_l);
+    cvReleaseImage(&image_r);
+    cvReleaseImage(&orig_image_l);
+    cvReleaseImage(&orig_image_r);
 }

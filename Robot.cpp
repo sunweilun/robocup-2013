@@ -1,6 +1,5 @@
 #include "Robot.h"
 #include "motor_uplayer.h"
-#include "getPhoto.h"
 #include <math.h>
 
 Robot::Robot()
@@ -72,52 +71,34 @@ void Robot::turnRight(float angle)
 
 void Robot::drawMap()
 {
-    printf("in\n");
     getImage();
-    printf("out\n");
     for(int i=0; i<12; i++)
     {
         getImage();
-        cvNamedWindow("src", CV_WINDOW_AUTOSIZE);
-        cvMoveWindow("src", 512, 512);
-        cvShowImage("src", image_r);
+        //cvNamedWindow("src", CV_WINDOW_AUTOSIZE);
+        //cvMoveWindow("src", 512, 512);
+        //cvShowImage("src", image_r);
         cvWaitKey(100);
-
-        printf("draw start\n");
         worldMap.updateMap(image_r);
         locateOwnGate();
-        printf("draw finish\n");
         turnRight(30);
     }
-    /*moveForward(200, 20);
+    moveForward(100, 20);
     for(int i=0;i<12;i++)
     {
         getImage();
-        printf("draw start\n");
-        worldMap.updateMap(image);
-        printf("draw finish\n");
+        worldMap.updateMap(image_r);
         turnRight(30);
-    }*/
-
-    //getImage();
-    //worldMap.updateMap(image);
-    //turnRight(180);
-    //getImage();
-    //worldMap.updateMap(image);
-    //moveForward(200,30);
-    //getImage();
-    // worldMap.updateMap(image);
-    //worldMap.saveMap("result.png");
+    }
 }
 
 void Robot::getImage()
 {
-    usleep(SLEEPTIME_BEFORE_PHOTO); // sleep until the camera is still
     if(!image_l)
         image_l = cvCreateImage(cvSize(width,height),IPL_DEPTH_8U,3);
     if(!image_r)
         image_r = cvCreateImage(cvSize(width,height),IPL_DEPTH_8U,3);
-    getPhoto(image_l, image_r);
+    getPhoto2(image_l, image_r);
     cvCvtColor(image_l,image_l,CV_RGB2BGR);
     cvCvtColor(image_r,image_r,CV_RGB2BGR);
 }
@@ -149,13 +130,18 @@ void Robot::moveRotate(bool isLeft, float radius, float arc)
         ori -= arc;
         ori = ori<0?ori+2*M_PI:(ori>2*M_PI?ori-2*M_PI:ori);
 
-        int min1 = 0, min2 = 0, mind = 10000;
+        int min1 = 0, min2 = 0;
+        float mind = 10000;
         float radio = (radius + DIST_BETWEEN_WHEELS / 2) / (radius - DIST_BETWEEN_WHEELS / 2);
+        //printf("%f\n", radio);
         float nowr;
         for (int i = 30; i >= 2; i--)
             for (int j = 1; j < i; j++) {
                 nowr = i *1.0 / j;
+                //printf("%f %d %d\n", nowr, i, j);
                 if (myabs(nowr - radio) < mind) {
+                    //printf("changed! %f < %f\n", myabs(nowr-radio) , mind);
+                    //cvWaitKey();
                     mind = myabs(nowr - radio);
                     min1 = i;
                     min2 = j;
@@ -163,7 +149,8 @@ void Robot::moveRotate(bool isLeft, float radius, float arc)
             }
             float t = (((arc - ARC_DELAY) * (radius + DIST_BETWEEN_WHEELS / 2) / min1)
                                 + ((arc - ARC_DELAY) * (radius - DIST_BETWEEN_WHEELS / 2) / min2)) / 2;
-            printf("%d %d %f", min1, min2, t);
+            //printf("%d %d %f", min1, min2, t);
+            //cvWaitKey();
             goWithSpeed(min2, min1, t);
     }
     else  //turn right
@@ -183,13 +170,18 @@ void Robot::moveRotate(bool isLeft, float radius, float arc)
         ori += arc;
         ori = ori<0?ori+2*M_PI:(ori>2*M_PI?ori-2*M_PI:ori);
 
-        int min1 = 0, min2 = 0, mind = 10000;
+        int min1 = 0, min2 = 0;
+        float mind = 10000;
         float radio = (radius + DIST_BETWEEN_WHEELS / 2) / (radius - DIST_BETWEEN_WHEELS / 2);
+        //printf("%f\n", radio);
         float nowr;
         for (int i = 30; i >= 2; i--)
             for (int j = 1; j < i; j++) {
                 nowr = i *1.0 / j;
+                //printf("%f %d %d\n", nowr, i, j);
                 if (myabs(nowr - radio) < mind) {
+                    //printf("changed! %f < %f\n", myabs(nowr-radio) , mind);
+                    //cvWaitKey();
                     mind = myabs(nowr - radio);
                     min1 = i;
                     min2 = j;
@@ -197,10 +189,10 @@ void Robot::moveRotate(bool isLeft, float radius, float arc)
             }
             float t = (((arc - ARC_DELAY) * (radius + DIST_BETWEEN_WHEELS / 2) / min1)
                                 + ((arc - ARC_DELAY) * (radius - DIST_BETWEEN_WHEELS / 2) / min2)) / 2;
-            printf("%d %d %f", min1, min2, t);
+            //printf("%d %d %f", min1, min2, t);
+            //cvWaitKey();
             goWithSpeed(min1, min2, t);
     }
-
 }
 
 
@@ -247,8 +239,18 @@ void Robot::updateBallStatus()
     timeBase=t0;
     ballTracker.pushFrame(image_l,temptime);
     ballTracker.pos[0].z=0;
-    printf("t = %f\n",temptime);
-    printf("images.size=%d before processing.\n",ballTracker.images.size());
+    //printf("t = %f\n",temptime);
+    //printf("images.size=%d before processing.\n",ballTracker.images.size());
+    if(ballTracker.images.size()==3)
+    {
+        printf("pos_scr[]=");
+        for(int i=0;i<ballTracker.images.size();++i)
+            printf("(%f,%f,%f)",ballTracker.pos_scr[i].x,ballTracker.pos_scr[i].y,ballTracker.pos_scr[i].z);
+        printf("pos[]=");
+        for(int i=0;i<ballTracker.images.size();++i)
+            printf("(%f,%f,%f)",ballTracker.pos[i].x,ballTracker.pos[i].y,ballTracker.pos[i].z);
+        printf("---------------------------------\n");
+    }
     int ret;
     if(ballTracker.pos.size()==2)
         ret=ballTracker.processFrame(1);
@@ -256,6 +258,11 @@ void Robot::updateBallStatus()
         ret=ballTracker.processFrame(0);
     else
     {
+    if(ballTracker.images.size()>0)
+     {
+            cvShowImage("leftImage",ballTracker.images[ballTracker.images.size()-1]);
+    cvWaitKey(10);
+    }
         ballTracker.popFrame(ballTracker.images.size());
         return;
     }
@@ -288,13 +295,35 @@ void Robot::updateBallStatus()
     {
         if(ballTracker.pos[i]==cv::Point3f(-1,-1,-1))
         {
+    if(ballTracker.images.size()>0)
+      {
+            cvShowImage("leftImage",ballTracker.images[ballTracker.images.size()-1]);
+    cvWaitKey(10);
+    }
             ballTracker.popFrame(ballTracker.images.size());
             break;
         }
     }
-    printf("images.size=%d\n",ballTracker.images.size());
-    if(ballTracker.images.size()!=2 || ret!=2)
+    //printf("images.size=%d\n",ballTracker.images.size());
+    if(ballTracker.images.size()!=2)
+    {
+    if(ballTracker.images.size()>0)
+     {
+            cvShowImage("leftImage",ballTracker.images[ballTracker.images.size()-1]);
+    cvWaitKey(10);
+    }
         return;
+    }
+    if(ret!=2)
+    {
+    if(ballTracker.images.size()>0)
+    {
+            cvShowImage("leftImage",ballTracker.images[ballTracker.images.size()-1]);
+    cvWaitKey(10);
+    }
+        ballTracker.popFrame(1);
+        return;
+    }
     //if(ballTracker.pos[1].z<ballTracker.pos[0].z)
         //return;
     ballPosition.x=ballTracker.pos[1].x;
@@ -302,8 +331,8 @@ void Robot::updateBallStatus()
     ballVelocity.x=(ballTracker.pos[1].x-ballTracker.pos[0].x)/(ballTracker.pos[1].z-ballTracker.pos[0].z);
     ballVelocity.y=(ballTracker.pos[1].y-ballTracker.pos[0].y)/(ballTracker.pos[1].z-ballTracker.pos[0].z);
     ballLocated=true;
-    printf("ball: world pos=(%f,%f) v=(%f,%f)\n",ballTracker.pos[1].x,ballTracker.pos[1].y,ballVelocity.x,ballVelocity.y);
-    printf("showing\n");
+    //printf("ball: world pos=(%f,%f) v=(%f,%f)\n",ballTracker.pos[1].x,ballTracker.pos[1].y,ballVelocity.x,ballVelocity.y);
+    //printf("showing\n");
 
     cvCircle(ballTracker.images[1],cvPoint(ballTracker.pos_scr[1].x,ballTracker.pos_scr[1].y),ballTracker.pos_scr[1].z,CV_RGB(255,255,0),2);
     cvNamedWindow("leftImage");
@@ -311,10 +340,10 @@ void Robot::updateBallStatus()
     cvShowImage("leftImage",ballTracker.images[1]);
     cvWaitKey(10);
     //cvDestroyWindow("leftImage");
-    cvNamedWindow("image_l");
-    cvMoveWindow("image_l",512,512);
-    cvShowImage("image_l",image_l);
-    cvWaitKey(10);
+    //cvNamedWindow("image_l");
+    //cvMoveWindow("image_l",512,512);
+    //cvShowImage("image_l",image_l);
+    //cvWaitKey(10);
     //cvDestroyWindow("image_l");
     //if(ballTracker.images.size()>1)
     {
@@ -333,36 +362,48 @@ void* keeperMotionThread(void* params)
     float &moveDist = *((float*) paramsList[1]);
     int &v_level= *((int*) paramsList[2]);
     Robot &robot= *((Robot*) paramsList[3]);
+    bool &kmt_abort = *((bool*) paramsList[4]);
     while(!robot.abort)
     {
-        //moveDist += v_level*DELTA_V*DELTA_T/float(1e6);
+        moveDist += v_level*DELTA_V*DELTA_T/float(1e6);
         v_level += getAcc(v_level,targetDist-moveDist);
-       // sendAA(v_level*DELTA_V,v_level*DELTA_V);
+        sendAA(v_level*DELTA_V,v_level*DELTA_V);
+        //printf("dist = %f\n",targetDist-moveDist);
         usleep(DELTA_T);
     }
+    while(v_level)
+    {
+        v_level += v_level>0?-1:1;
+        sendAA(v_level*DELTA_V,v_level*DELTA_V);
+            //printf("dist = %f\n",targetDist-moveDist);
+        usleep(DELTA_T);
+    }
+    kmt_abort = true;
 }
 
 void Robot::keepGoal()
 {
     int v_level = 0;
     abort = false;
+    bool kmt_abort = false;
     cv::Point2f ballVelocity,ballPosition;
     bool vt_ballLocated;
     cv::Point2f keeper_center = ownGoal_coord + ownGoal_frontDir*KEEPER_DIST2GOAL;
     cv::Point2f keeper_dir(ownGoal_frontDir.y,-ownGoal_frontDir.x);
     moveTo(keeper_center,30);
     rotateTo(keeper_dir);
-    void *kmt_params[4];
-    float targetDist = 0;
+    void *kmt_params[5];
+    float targetDist = BOT_CENTER2CAM_CENTER;
     float moveDist = 0;
     kmt_params[0] = &targetDist;
     kmt_params[1] = &moveDist;
     kmt_params[2] = &v_level;
     kmt_params[3] = this;
+    kmt_params[4] = &kmt_abort;
     pthread_t km_thread;
     pthread_create(&km_thread,NULL,&keeperMotionThread,(void*)kmt_params);
     usleep(1000);
-    while(!abort)
+    while(!kmt_abort)
     {
         float temp_dist = moveDist;
         x = keeper_center.x+temp_dist*sin(ori);
@@ -392,7 +433,7 @@ void Robot::keepGoal()
         shootRoute.clear();
         shootRoute.push_back(cv::Point(x,y));
         shootRoute.push_back(moveToPoint);
-        targetDist = (moveToPoint - keeper_center).dot(keeper_dir);
+        targetDist = (moveToPoint - keeper_center).dot(keeper_dir)+BOT_CENTER2CAM_CENTER;
     }
 }
 
@@ -481,9 +522,9 @@ void Robot::spin() {//}std::vector<cv::Point2f> balls) {
     //printf("find %d balls\n", balls.size());
     //if (balls.size() < 2)
      //   return;
-    //std::vector<cv::Point2f> ans = findMulBall();
-    cv::Point2f ball1(0, -40);// = ans[0];// = balls[0];
-    cv::Point2f ball2(0, 80);// = ans[1];// = balls[1];
+    std::vector<cv::Point2f> ans = findMulBall();
+    cv::Point2f ball1 = ans[0];// = balls[0];
+    cv::Point2f ball2 = ans[1];// = balls[1];
     printf("%f %f\n %f %f\n", ball1.x, ball1.y, ball2.x, ball2.y);
     //cvWaitKey();
     //get them by some means of find balls
@@ -520,7 +561,7 @@ void Robot::spin() {//}std::vector<cv::Point2f> balls) {
     turnRight(arc * 180 / M_PI);
     //cvWaitKey()
     moveRotate(true, rspin, arc * 2);//!!!
-    cvWaitKey();
+    //cvWaitKey();
     moveRotate(false, rspin, arc * 2);
     /*if (turn > 0) {
         turnRight(arc);
@@ -588,7 +629,7 @@ bool Robot::locateBall()
     ball_coord = worldMap.coord_robot2world(rCoord);
     CvRect bbox = worldMap.getMap_bbox();
     cv::Point2f ball_coord_img = world2image(ball_coord);
-    if(ball_coord_img.x>=bbox.x && ball_coord_img.x<=bbox.x+bbox.width && ball_coord_img.y>=bbox.y && ball_coord_img.y<=bbox.y+bbox.height)
+    if(ball_coord_img.x<bbox.x || ball_coord_img.x>bbox.x+bbox.width || ball_coord_img.y<bbox.y || ball_coord_img.y>bbox.y+bbox.height)
     {
         return false;
     }
@@ -659,7 +700,7 @@ Robot::~Robot()
         cvReleaseImage(&image_l);
     if(image_r)
         cvReleaseImage(&image_r);
-	ptEnd();
+	//ptEnd();
 }
 
 bool Robot::locateOwnGate()
@@ -746,9 +787,211 @@ bool Robot::locateOwnGate()
         return true;
     }
 }
+int Robot::init_socket(const char* ipStr, const int host){
+    int socket_fd;
+    struct sockaddr_in s_add;
+    socket_fd = socket(AF_INET, SOCK_STREAM, 0);
 
-void Robot::adjustWorldCoordinate()
-{
+	if(-1 == socket_fd){
+		printf("socket fail \n");
+		exit(-1);
+	}
+	//printf("socket ok \n");
 
-    return;
+	memset(&s_add, 0, sizeof(s_add));
+	s_add.sin_family = AF_INET;
+	s_add.sin_addr.s_addr = inet_addr(ipStr);
+	s_add.sin_port = htons(host);
+
+	//printf("s_addr = %#x ,port : %#x\r\n",s_add.sin_addr.s_addr,s_add.sin_port);
+
+	if(-1 == connect(socket_fd,(struct sockaddr *)(&s_add), sizeof(struct sockaddr))){
+		printf("connect fail \n");
+		return 0;
+	}
+
+	printf("connect ok !\n");
+	socket_robo =  socket_fd;
+    return socket_fd;
+}
+void* stopKeeperThread(void * args){
+    Robot *rb = (Robot*) args;
+    int socket_fd = rb->socket_robo;
+     if(socket_fd){
+        int recvbytes = 0;
+        int BUFFER_SIZE = 2048;
+        char read_buff[BUFFER_SIZE];
+          while(1){
+            bzero(read_buff, sizeof(read_buff));
+            if(-1 == (recvbytes = recv(socket_fd,read_buff,BUFFER_SIZE, 0))){
+                printf("read data fail \n");
+            }
+            else
+            {
+                string recvCmd(read_buff);
+
+                if(recvCmd == "stopKeeper"){
+                    printf("receive scan\n");
+                    //do something
+                    rb->abort = true;
+                    char tmp[BUFFER_SIZE];
+                    strcpy(tmp, "stopKeeper_ack");
+                    if (send(socket_fd, tmp, (int)strlen(tmp), 0) < 0){
+                        printf("send stopKeeper_ack fail\n");
+                    }
+                    else{
+                        printf("send stopKeeper_ack success\n");
+                    }
+                    return NULL;
+                }//if
+            }//else
+        }//wile
+    }
+    return NULL;
+}
+void  Robot::listenAndAct(){
+    int socket_fd = socket_robo;
+    if(socket_fd){
+        int recvbytes = 0;
+        int BUFFER_SIZE = 2048;
+        char read_buff[BUFFER_SIZE];
+
+        while(1){
+            bzero(read_buff, sizeof(read_buff));
+            if(-1 == (recvbytes = recv(socket_fd,read_buff,BUFFER_SIZE, 0))){
+                printf("read data fail \n");
+            }
+            else
+            {
+                string recvCmd(read_buff);
+
+                if(recvCmd == "scan"){
+                    printf("receive scan\n");
+                    //do something
+                    drawMap();
+                    char tmp[BUFFER_SIZE];
+                    strcpy(tmp, "scan_ack");
+                    if (send(socket_fd, tmp, (int)strlen(tmp), 0) < 0){
+                        printf("send scan_ack fail\n");
+                    }
+                    else{
+                        printf("send scan_ack success\n");
+                    }
+                }
+                else if(recvCmd == "keeper"){
+                    printf("receive keeper\n");
+                    //do something
+                    pthread_t t1;
+                    pthread_create(&t1, NULL, stopKeeperThread, this);
+                    keepGoal();
+                    char tmp[BUFFER_SIZE];
+                    strcpy(tmp, "keeper_ack");
+                    if (send(socket_fd, tmp, (int)strlen(tmp), 0) < 0){
+                        printf("send keeper_ack fail\n");
+                    }
+                    else{
+                        printf("send keeper_ack success\n");
+                    }
+                }
+                else if(recvCmd == "shoot"){
+                    printf("receive shoot\n");
+                    //do something
+                    shoot();
+                    char tmp[BUFFER_SIZE];
+                    strcpy(tmp, "shoot_ack");
+                    if (send(socket_fd, tmp, (int)strlen(tmp), 0) < 0){
+                        printf("send shoot_ack fail\n");
+                    }
+                    else{
+                        printf("send shoot_ack success\n");
+                    }
+                }
+                else if(recvCmd == "exit"){
+                    printf("receive exit\n");
+                    close(socket_fd);
+                    break;
+                }
+                else if(recvCmd == "pic"){
+                    char cmd[200];
+                    bzero(cmd, sizeof(cmd));
+                    strcpy(cmd, "sendpicstart");
+                    if(send(socket_fd, cmd, (int)strlen(cmd), 0) < 0){
+                        printf("send start cmd fail\n");
+                        continue;
+                    }
+                    if(-1 == (recvbytes = recv(socket_fd,read_buff,BUFFER_SIZE, 0))){
+                        printf("receive start cmd ack fail\n");
+                        continue;
+                    }
+                    if(strcmp(read_buff, "fileack") != 0){
+                        printf("receive not fileack\n");
+                        continue;
+                    }
+
+                    int sendContent = 1;
+                    int width = 128, height = 128;
+                    IplImage* src = cvLoadImage("Radar.png");
+                    if(src == NULL){
+                        printf("no Radar.png\n");
+                        continue;
+                    }
+                    int dst_width = 128, dst_height = 128;
+                    IplImage* img = cvCreateImage(cvSize(dst_width, dst_height), src->depth, 3);
+                    cvResize(src, img, CV_INTER_LINEAR);
+
+                    uchar* img_data = (uchar *)img->imageData;
+
+                    int sendRgbSize = 128*3;
+                    int dataCharSize = width*height*3*3;
+                    int sendCharSize = 128*3*3;
+                    int sendTime = dataCharSize/sendCharSize;
+                    printf("sendTime: %d\n", sendTime);
+
+                    uchar sendChardata[sendCharSize];
+                    for(int i = 0; i < sendTime; i++){
+                        bzero(sendChardata, sendCharSize);
+                        for(int j = 0; j < sendRgbSize; j++){
+                            int x = (int)img_data[i*sendRgbSize+j];
+                            sendChardata[j*3+0] = x/100+'0';
+                            sendChardata[j*3+1] = (x%100)/10+'0';
+                            sendChardata[j*3+2] = (x%10)+'0';
+                        }
+                        //cout << i << endl;
+
+                        if(send(socket_fd, sendChardata, sendCharSize, 0) < 0){
+                            printf("%d send rgb_data fail\n", i);
+                            sendContent = 0;
+                            break;
+                        }
+
+                        //cout << i << " send rgb_data success" << endl;
+                        if(-1 == (recvbytes = recv(socket_fd,read_buff,BUFFER_SIZE, 0))){
+                            printf("%d receive data ack fail\n", i);
+                            sendContent = 0;
+                            break;
+                        }
+                        if(strcmp(read_buff, "fileack") != 0){
+                            printf("%d receive not ackfile\n", i);
+                            sendContent = 0;
+                            break;
+                        }
+                    }
+                    if(sendContent == 0){
+                        printf("sendContent = false\n");
+                        continue;
+                    }
+                    bzero(cmd, sizeof(cmd));
+                    strcpy(cmd, "sendpicfinish");
+                    if(send(socket_fd, cmd, (int)strlen(cmd), 0) < 0){
+                        printf("send file finish fail\n");
+                        continue;
+                    }
+                    printf("data all send\n");
+                    cvReleaseImage(&src);
+                    cvReleaseImage(&img);
+                }//else if
+
+            }//else
+        }
+    }
 }

@@ -182,6 +182,15 @@ float length(const cv::Point2f &p)
 int getAcc(int k,float dist)
 {
     int ret=0;
+    if(fabs(dist)<1 && abs(k)<=1)
+    {
+        if(k==0)
+            return 0;
+        if(k<0)
+            return 1;
+        if(k>0)
+            return -1;
+    }
     if(dist>k*abs(k)/2.0*DELTA_V*DELTA_T/float(1e6))
     {
         ret=1;
