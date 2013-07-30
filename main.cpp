@@ -2,9 +2,9 @@
 #include "Robot.h"
 #include "calib.h"
 
-#define SOCKETBOT 1
+#define SOCKETBOT 0
 #define CALIB 0
-#define ROBOTTEST 0
+#define ROBOTTEST 1
 #define BALLTEST 0
 
 #define WORLD_COORD_ADJUST 0
