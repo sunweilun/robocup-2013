@@ -3,7 +3,7 @@
 #define KEEPER_DIST2GOAL 50
 #define EXTRA_WAIT_TIME 3
 
-#define DELTA_T 100000
+#define DELTA_T 50000
 #define DELTA_V 5
 #define SPEED_LIMIT 50
 
@@ -19,9 +19,11 @@
 #define DIST_BETWEEN_WHEELS 31.5
 
 #define DATA_PATH "/home/csai123/桌面/RoboCup/data/"
-//!!!#define CAM_PARMS_PATH "/home/csai123/robocup-test/calib/left-right"
-#define CAM_PARMS_PATH_RIGHT "/home/csai123/桌面/RoboCup/cam_parms_right"
-#define CAM_PARMS_PATH_LEFT "/home/csai123/桌面/RoboCup/cam_parms_left"
+
+//#define CAM_PARMS_PATH_RIGHT "/home/csai123/桌面/RoboCup/cam_parms_right"
+//#define CAM_PARMS_PATH_LEFT "/home/csai123/桌面/RoboCup/cam_parms_left"
+#define CAM_PARMS_PATH_RIGHT "cam_parms_right"
+#define CAM_PARMS_PATH_LEFT "cam_parms_left"
 
 #define INVAlID_CAM_HEIGHT 50
 
@@ -37,17 +39,17 @@
 
 
 #define GRASS_H_LB 150
-#define GRASS_H_UB 190
+#define GRASS_H_UB 200
 #define GRASS_S_LB 0.4
-#define GRASS_S_UB 0.6
+#define GRASS_S_UB 0.65
 #define GRASS_V_LB 0.5
 #define GRASS_V_UB 0.85
 
 #define LINE_H_LB 180
 #define LINE_H_UB 360
 #define LINE_S_LB 0.01
-#define LINE_S_UB 0.5
-#define LINE_V_LB 0.9
+#define LINE_S_UB 0.4
+#define LINE_V_LB 0.77
 #define LINE_V_UB 1
 
 #define BLUE_H_LB 209
