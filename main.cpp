@@ -7,6 +7,8 @@
 #define ROBOTTEST 1
 #define BALLTEST 0
 
+#define WORLD_COORD_ADJUST 0
+
 int main()
 {
 #if SOCKETBOT

@@ -45,6 +45,16 @@ private:
     bool getBallInfo(cv::Point2f &ballVelocity,cv::Point2f &ballPosition);
     std::vector<cv::Point2f> shootRoute;
     void updateBallStatus();
+    void adjustWorldCoordinate();
+    struct myLine
+    {
+        cv::Point2f p[2];//start point and end point
+        double theta;//angle
+        double l;//length
+        int clsId;//a number labeling a temporary orientation group
+    };
+    int maxLines;//limit the maximum number of lines kept
+    vector<myLine> lines;//record most lines
 public:
     Robot();
     void keepGoal();

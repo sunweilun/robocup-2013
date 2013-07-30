@@ -1018,3 +1018,8 @@ void  Robot::listenAndAct(){
         }
     }
 }
+
+void adjustWorldCoordinate()
+{
+    return;
+}
