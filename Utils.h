@@ -28,4 +28,6 @@ float getTime(const cv::Point2f &p1,const cv::Point2f &d1,const cv::Point2f &p2,
 
 int getAcc(int k,float dist);
 
+double calcAngle(const cv::Point2f &p1, const cv::Point2f &p2);
+
 #endif // UTILS_H
