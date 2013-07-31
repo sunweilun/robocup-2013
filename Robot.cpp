@@ -72,40 +72,32 @@ void Robot::turnRight(float angle)
 void Robot::drawMap()
 {
     getImage();
-   // char filename[20];
-    //strcpy(filename, "0.png");
     for(int i=0; i<12; i++)
     {
         getImage();
-
-        adjustWorldCoordinate(image_r,0);
-
-/*
-        if(i < 10){
-            filename[0] = char(i+'0');
-            filename[5] = '\0';
-            cvSaveImage(filename, image_r);
-        }
-*/
-
-        //cvNamedWindow("src", CV_WINDOW_AUTOSIZE);
-        //cvMoveWindow("src", 512, 512);
-        //cvShowImage("src", image_r);
+        //adjustWorldCoordinate(image_r,0);
         cvWaitKey(100);
         worldMap.updateMap(image_r);
         locateOwnGate();
         turnRight(30);
     }
+
+    //getImage();
+    //adjustWorldCoordinate(image_r,2);
+    //adjustWorldCoordinate(image_r,1);
+    //rotateTo(cv::Point2f(0,1));
     moveForward(200, 20);
     for(int i=0;i<12;i++)
     {
         getImage();
-        adjustWorldCoordinate(image_r,0);
+        //adjustWorldCoordinate(image_r,0);
         worldMap.updateMap(image_r);
         turnRight(30);
     }
     getImage();
-    adjustWorldCoordinate(image_r,2);
+    //adjustWorldCoordinate(image_r,2);
+    //adjustWorldCoordinate(image_r,1);
+    //rotateTo(cv::Point2f(0,1));
 }
 
 void Robot::getImage()
@@ -379,6 +371,7 @@ void* keeperMotionThread(void* params)
     int &v_level= *((int*) paramsList[2]);
     Robot &robot= *((Robot*) paramsList[3]);
     bool &kmt_abort = *((bool*) paramsList[4]);
+    bool &rotating = *((bool*) paramsList[5]);
     while(!robot.abort)
     {
         moveDist += v_level*DELTA_V*DELTA_T/float(1e6);
@@ -389,7 +382,11 @@ void* keeperMotionThread(void* params)
         {
             cv::Point2f ori_dir(sin(robot.ori),cos(robot.ori));
             if(acos(ori_dir.dot(tar_dir))>ORI_TOL*M_PI/180)
+            {
+                rotating=true;
                 robot.rotateTo(tar_dir);
+                rotating=false;
+            }
         }
         sendAA(v_level*DELTA_V,v_level*DELTA_V);
         //printf("dist = %f\n",targetDist-moveDist);
@@ -409,6 +406,7 @@ void Robot::keepGoal()
 {
     int v_level = 0;
     abort = false;
+    bool rotating=false;
     bool kmt_abort = false;
     cv::Point2f ballVelocity,ballPosition;
     bool vt_ballLocated;
@@ -416,7 +414,7 @@ void Robot::keepGoal()
     cv::Point2f keeper_dir(ownGoal_frontDir.y,-ownGoal_frontDir.x);
     moveTo(keeper_center,30);
     rotateTo(keeper_dir);
-    void *kmt_params[5];
+    void *kmt_params[6];
     float targetDist = BOT_CENTER2CAM_CENTER;
     float moveDist = 0;
     kmt_params[0] = &targetDist;
@@ -424,12 +422,13 @@ void Robot::keepGoal()
     kmt_params[2] = &v_level;
     kmt_params[3] = this;
     kmt_params[4] = &kmt_abort;
+    kmt_params[5] = &rotating;
     pthread_t km_thread;
     pthread_create(&km_thread,NULL,&keeperMotionThread,(void*)kmt_params);
     usleep(1000);
     while(!kmt_abort)
     {
-        if(v_level==0)
+        if(v_level==0 && !rotating)
         {
             adjustWorldCoordinate(image_r,1);
         }
@@ -540,15 +539,15 @@ void Robot::shoot()
     updateRadar();
     if(turn)
     {
-        getImage();
-        adjustWorldCoordinate(image_r,1);
+        //getImage();
+        //adjustWorldCoordinate(image_r,1);
         moveTo(turningPoint,30);
     }
-    getImage();
-    adjustWorldCoordinate(image_r,1);
+    //getImage();
+    //adjustWorldCoordinate(image_r,1);
     moveTo(shootPrepPosition,30);
-    getImage();
-    adjustWorldCoordinate(image_r,1);
+    //getImage();
+    //adjustWorldCoordinate(image_r,1);
     moveTo(targetPosition,50);
     shootRoute.clear();
     updateRadar();
@@ -1066,25 +1065,16 @@ bool Robot::adjustWorldCoordinate(IplImage* image, double coordAdjustRate)
     }
 		if( img != 0 )
 		{
-			//printf("0\n");
 			IplImage* dst = cvCreateImage( cvGetSize(img), 8, 1 );
-			//printf("1\n");
 			IplImage* color_dst = cvCreateImage( cvGetSize(img), 8, 3 );
-			//printf("2\n");
 			CvMemStorage* storage = cvCreateMemStorage(0);
 			CvSeq* ls = 0;
 			int i;
-			//printf("3\n");
-
-			//printf("4\n");
 			cvCanny( src1, dst, 50, 200, 3 );
-			//printf("5\n");
 
 			cvCvtColor( dst, color_dst, CV_GRAY2BGR );
-			//printf("6\n");
 
 			ls = cvHoughLines2( dst, storage, CV_HOUGH_PROBABILISTIC, 2, CV_PI/90, 20, 5, 30 );
-			//printf("7\n");
 			//ls = cvHoughLines2( dst, storage, CV_HOUGH_PROBABILISTIC, 5, CV_PI/30, 10, 20, 5 );
 			vector<myLine> tmplines;
 			for( i = 0; i < ls->total; i++ )
@@ -1104,11 +1094,11 @@ bool Robot::adjustWorldCoordinate(IplImage* image, double coordAdjustRate)
                 myLine templ(tmpp[0],tmpp[1]);
                 if(templ.l>LINE_LENGTH_LBOUND)
                     tmplines.push_back(templ);
-				//printf("length=%f angle=%f\n",sqrt(float((tmpl[1].y-tmpl[0].y)*(tmpl[1].y-tmpl[0].y))
+//				printf("length=%f angle=%f\n",sqrt(float((tmpl[1].y-tmpl[0].y)*(tmpl[1].y-tmpl[0].y));
 				//	+float((tmpl[1].x-tmpl[0].x)*(tmpl[1].x-tmpl[0].x)))
 				//	,atan2(float(tmpl[1].y-tmpl[0].y),float(tmpl[1].x-tmpl[0].x)));
 			}
-			//printf("\n");
+			printf("\n");
 			cvNamedWindow( "Source", 1 );
 			cvShowImage( "Source", img );
 
@@ -1196,17 +1186,23 @@ bool Robot::adjustWorldCoordinate(IplImage* image, double coordAdjustRate)
 			    }
 			    if(sumL==0)
 			    {
+                    printf("false 2 sumL=0\n");
 			        return false;
 			    }
 			    mainAngle=sumAngle/sumL;
 			    mainGroupId=maxValueGroup;
+			    printf("mainAngle=%f mainGroupId=%d\n",mainAngle,mainGroupId);
 			}
 			else if(coordAdjustRate==1)
             {
-                    //printf("in func param=1\n");
-                    //printf("tmplines.size=%d\n",tmplines.size());
+                CvRect bBox=worldMap.getMap_bbox();
+                    printf("in func param=1\n");
+                    printf("tmplines.size=%d\n",tmplines.size());
                 for(i=0;i<tmplines.size();++i)
                 {
+                    cv::Point2f imgPos=world2image(tmplines[i].p[0]);
+                    if(!(imgPos.x>bBox.x-BBOX_DELTA && imgPos.x<bBox.x+bBox.width+BBOX_DELTA && imgPos.y>bBox.y-BBOX_DELTA && imgPos.y<bBox.y+bBox.height+BBOX_DELTA))
+                        continue;
 			        bool classified=false;
 			        double minAngle=CV_PI;
 			        int minAnglePhase=0;
@@ -1227,15 +1223,15 @@ bool Robot::adjustWorldCoordinate(IplImage* image, double coordAdjustRate)
 			            {
 			                minAngle=abs(angle90-CV_PI/4.0);
 			                bestJ=j;
-                            minAnglePhase=phase;
+                                minAnglePhase=phase;
 			            }
 			        }
 			        if(bestJ>-1)
 			        {
 			            //if(minAngle<CV_PI/6.0)
-                        tmplines[i].clsId=mainGroupId+minAnglePhase;
+                        tmplines[i].clsId=mainGroupId*2+minAnglePhase;
                         classified=true;
-                        //printf("nearest main ori found. angle diff=%f\n",minAngle);
+                        printf("nearest main ori found. angle diff=%f\n",minAngle);
 			        }
 			    }
 			    double sumAngle=0;
@@ -1244,7 +1240,7 @@ bool Robot::adjustWorldCoordinate(IplImage* image, double coordAdjustRate)
 			    {
 			        if(tmplines[i].clsId/2==mainGroupId)
 			        {
-                    //printf("comparing with a main line..i=%d\n",i);
+                    printf("comparing with a main line..i=%d\n",i);
 			            double angle=tmplines[i].theta+CV_PI/4.0;//similar strategy, add 45 degree
 			            if(angle<0)
                             angle+=CV_PI*2.0;
@@ -1255,12 +1251,12 @@ bool Robot::adjustWorldCoordinate(IplImage* image, double coordAdjustRate)
 			    }
 			    if(sumL<LINE_LENGTH_SUM_LBOUND)
 			    {
-                    //printf("false sumL<20\n");
+                    printf("false sumL=%f<%d\n",sumL,LINE_LENGTH_SUM_LBOUND);
 			        return false;
 			    }
 			    double curAngle=sumAngle/sumL-CV_PI/4.0;//subtract 45 degree
 			    ori+=curAngle-mainAngle;
-                    //printf("true oriChange=%f\n",curAngle-mainAngle);
+                    printf("true oriChange=%f\n",curAngle-mainAngle);
             }
 		}
 
