@@ -373,7 +373,7 @@ std::vector<cv::Point3f> ImageProcessor::extractCircles(const IplImage* image)
             }//for i
             float tmpRatio = (float)ballPixNum/totalPixNum;
             //cout << tmpRatio << endl;
-            if(tmpRatio > 0.35){
+            if(tmpRatio > 0.4){
                 balls.push_back(c);
             }
         }//for c

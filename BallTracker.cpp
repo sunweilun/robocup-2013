@@ -230,11 +230,11 @@ cv::Point3f BallTracker::ballDetect(const IplImage* image1)
 				}
 				waitQueue.pop_front();
 			}
-			if(curArea<100)
+			if(curArea<BALLTRACKER_AREA_LBOUND)
                 continue;
 			xx/=curArea;
 			yy/=curArea;
-			if(xmax-xmin<10 || ymax-ymin<10)
+			if(xmax-xmin<BALLTRACKER_AREA_WIDTH_LBOUND || ymax-ymin<BALLTRACKER_AREA_HEIGHT_LBOUND)
 			continue;
 			areas.push_back(Area(newId,xx,yy,xmin,xmax,ymin,ymax,curArea));
 			//printf("id=%d centerPoint=(%d,%d) area=%d\n",newId,xx,yy,curArea);

@@ -4,12 +4,14 @@
 #define EXTRA_WAIT_TIME 3
 #define ORI_TOL 20
 #define LINE_LENGTH_LBOUND 5
-#define LINE_LENGTH_SUM_LBOUND 20
+#define LINE_LENGTH_SUM_LBOUND 10
 
 
 #define DELTA_T 50000
 #define DELTA_V 5
 #define SPEED_LIMIT 50
+
+#define BBOX_DELTA 10
 
 #define MAX_SPEED_LEVEL (SPEED_LIMIT/DELTA_V)
 
@@ -53,7 +55,7 @@
 #define LINE_H_UB 360
 #define LINE_S_LB 0.01
 #define LINE_S_UB 0.4
-#define LINE_V_LB 0.78
+#define LINE_V_LB 0.82
 #define LINE_V_UB 1
 
 #define BLUE_H_LB 209
@@ -63,19 +65,22 @@
 #define BLUE_V_LB 0.89
 #define BLUE_V_UB 1
 
-#define BALL_H_LB 235
+#define BALL_H_LB 222
 #define BALL_H_UB 331
-#define BALL_S_LB 0.18
+#define BALL_S_LB 0.175
 #define BALL_S_UB 0.495
 #define BALL_V_LB 0.23
-#define BALL_V_UB 0.58
+#define BALL_V_UB 0.65
 
-#define BALL_MOVING_H_LB 235
-#define BALL_MOVING_H_UB 331
+#define BALLTRACKER_AREA_LBOUND 50
+#define BALLTRACKER_AREA_WIDTH_LBOUND 5
+#define BALLTRACKER_AREA_HEIGHT_LBOUND 5
+#define BALL_MOVING_H_LB 205
+#define BALL_MOVING_H_UB 330
 #define BALL_MOVING_S_LB 0.1
-#define BALL_MOVING_S_UB 0.5
-#define BALL_MOVING_V_LB 0.15
-#define BALL_MOVING_V_UB 0.7
+#define BALL_MOVING_S_UB 0.6
+#define BALL_MOVING_V_LB 0.1
+#define BALL_MOVING_V_UB 0.8
 
 #define GRASS_BOUND cv::Point2f(GRASS_H_LB,GRASS_H_UB),cv::Point2f(GRASS_S_LB,GRASS_S_UB),cv::Point2f(GRASS_V_LB,GRASS_V_UB)
 #define LINE_BOUND cv::Point2f(LINE_H_LB,LINE_H_UB),cv::Point2f(LINE_S_LB,LINE_S_UB),cv::Point2f(LINE_V_LB,LINE_V_UB)
