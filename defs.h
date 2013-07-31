@@ -49,7 +49,7 @@
 #define LINE_H_UB 360
 #define LINE_S_LB 0.01
 #define LINE_S_UB 0.4
-#define LINE_V_LB 0.77
+#define LINE_V_LB 0.78
 #define LINE_V_UB 1
 
 #define BLUE_H_LB 209
