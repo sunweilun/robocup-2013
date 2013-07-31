@@ -3,6 +3,9 @@
 #define KEEPER_DIST2GOAL 50
 #define EXTRA_WAIT_TIME 3
 #define ORI_TOL 20
+#define LINE_LENGTH_LBOUND 5
+#define LINE_LENGTH_SUM_LBOUND 20
+
 
 #define DELTA_T 50000
 #define DELTA_V 5

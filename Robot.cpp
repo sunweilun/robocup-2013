@@ -104,6 +104,8 @@ void Robot::drawMap()
         worldMap.updateMap(image_r);
         turnRight(30);
     }
+    getImage();
+    adjustWorldCoordinate(image_r,2);
 }
 
 void Robot::getImage()
@@ -382,11 +384,12 @@ void* keeperMotionThread(void* params)
         moveDist += v_level*DELTA_V*DELTA_T/float(1e6);
         int acc = getAcc(v_level,targetDist-moveDist);
         v_level += acc;
-        cv::Point2f ori_dir(sin(robot.ori),cos(robot.ori));
         cv::Point2f tar_dir(robot.ownGoal_frontDir.y,-robot.ownGoal_frontDir.x);
-        if(v_level==0 && acc==0 && acos(ori_dir.dot(tar_dir))>ORI_TOL*M_PI/180)
+        if(v_level==0 && acc==0)
         {
-            robot.rotateTo(tar_dir);
+            cv::Point2f ori_dir(sin(robot.ori),cos(robot.ori));
+            if(acos(ori_dir.dot(tar_dir))>ORI_TOL*M_PI/180)
+                robot.rotateTo(tar_dir);
         }
         sendAA(v_level*DELTA_V,v_level*DELTA_V);
         //printf("dist = %f\n",targetDist-moveDist);
@@ -426,9 +429,14 @@ void Robot::keepGoal()
     usleep(1000);
     while(!kmt_abort)
     {
+        if(v_level==0)
+        {
+            adjustWorldCoordinate(image_r,1);
+        }
         float temp_dist = moveDist;
-        x = keeper_center.x+temp_dist*sin(ori);
-        y = keeper_center.y+temp_dist*cos(ori);
+        cv::Point2f shift = temp_dist*cv::Point2f(ownGoal_frontDir.y,-ownGoal_frontDir.x);
+        x = keeper_center.x+shift.x;
+        y = keeper_center.y+shift.y;
         float temp_v_level = v_level;
         cv::Point2f robot_velocity(temp_v_level*DELTA_V*sin(ori),temp_v_level*DELTA_V*cos(ori));
         updateBallStatus();
@@ -1042,32 +1050,41 @@ void  Robot::listenAndAct(){
 bool Robot::adjustWorldCoordinate(IplImage* image, double coordAdjustRate)
 {
     IplImage *img;
+    IplImage* src1=cvCreateImage(cvGetSize(image),IPL_DEPTH_8U,1);
     if(image->nChannels==3)
     {
         IplImage *hsv_img = get_hsv(image);
-
         img=worldMap.getField(hsv_img);
+        cvReleaseImage(&hsv_img);
+        src1=img;
     }
     else
     {
         img=image;
+        src1=img;
+            //cvCvtColor(img, src1, CV_BGR2GRAY);
     }
-
 		if( img != 0 )
 		{
+			//printf("0\n");
 			IplImage* dst = cvCreateImage( cvGetSize(img), 8, 1 );
+			//printf("1\n");
 			IplImage* color_dst = cvCreateImage( cvGetSize(img), 8, 3 );
+			//printf("2\n");
 			CvMemStorage* storage = cvCreateMemStorage(0);
 			CvSeq* ls = 0;
 			int i;
-            IplImage* src1=cvCreateImage(cvGetSize(img),IPL_DEPTH_8U,1);
+			//printf("3\n");
 
-            cvCvtColor(img, src1, CV_BGR2GRAY);
+			//printf("4\n");
 			cvCanny( src1, dst, 50, 200, 3 );
+			//printf("5\n");
 
 			cvCvtColor( dst, color_dst, CV_GRAY2BGR );
+			//printf("6\n");
 
 			ls = cvHoughLines2( dst, storage, CV_HOUGH_PROBABILISTIC, 2, CV_PI/90, 20, 5, 30 );
+			//printf("7\n");
 			//ls = cvHoughLines2( dst, storage, CV_HOUGH_PROBABILISTIC, 5, CV_PI/30, 10, 20, 5 );
 			vector<myLine> tmplines;
 			for( i = 0; i < ls->total; i++ )
@@ -1084,7 +1101,9 @@ bool Robot::adjustWorldCoordinate(IplImage* image, double coordAdjustRate)
                 roboPos=worldMap.coord_screen2robot(scrPos,true);
                 worldPos=worldMap.coord_robot2world(roboPos);
                 tmpp[1]=worldPos;
-				tmplines.push_back(myLine(tmpp[0],tmpp[1]));
+                myLine templ(tmpp[0],tmpp[1]);
+                if(templ.l>LINE_LENGTH_LBOUND)
+                    tmplines.push_back(templ);
 				//printf("length=%f angle=%f\n",sqrt(float((tmpl[1].y-tmpl[0].y)*(tmpl[1].y-tmpl[0].y))
 				//	+float((tmpl[1].x-tmpl[0].x)*(tmpl[1].x-tmpl[0].x)))
 				//	,atan2(float(tmpl[1].y-tmpl[0].y),float(tmpl[1].x-tmpl[0].x)));
@@ -1097,6 +1116,10 @@ bool Robot::adjustWorldCoordinate(IplImage* image, double coordAdjustRate)
 			cvShowImage( "Hough", color_dst );
 
 			cvWaitKey(10);
+			cvReleaseImage(&dst);
+			cvReleaseImage(&src1);
+			cvReleaseImage(&color_dst);
+			cvReleaseMemStorage(&storage);
 			if(coordAdjustRate==0)
 			{
                 for(i=0;i<tmplines.size();++i)
@@ -1180,6 +1203,8 @@ bool Robot::adjustWorldCoordinate(IplImage* image, double coordAdjustRate)
 			}
 			else if(coordAdjustRate==1)
             {
+                    //printf("in func param=1\n");
+                    //printf("tmplines.size=%d\n",tmplines.size());
                 for(i=0;i<tmplines.size();++i)
                 {
 			        bool classified=false;
@@ -1210,6 +1235,7 @@ bool Robot::adjustWorldCoordinate(IplImage* image, double coordAdjustRate)
 			            //if(minAngle<CV_PI/6.0)
                         tmplines[i].clsId=mainGroupId+minAnglePhase;
                         classified=true;
+                        //printf("nearest main ori found. angle diff=%f\n",minAngle);
 			        }
 			    }
 			    double sumAngle=0;
@@ -1218,6 +1244,7 @@ bool Robot::adjustWorldCoordinate(IplImage* image, double coordAdjustRate)
 			    {
 			        if(tmplines[i].clsId/2==mainGroupId)
 			        {
+                    //printf("comparing with a main line..i=%d\n",i);
 			            double angle=tmplines[i].theta+CV_PI/4.0;//similar strategy, add 45 degree
 			            if(angle<0)
                             angle+=CV_PI*2.0;
@@ -1226,12 +1253,14 @@ bool Robot::adjustWorldCoordinate(IplImage* image, double coordAdjustRate)
 			            sumL+=tmplines[i].l;
 			        }
 			    }
-			    if(sumL<20)
+			    if(sumL<LINE_LENGTH_SUM_LBOUND)
 			    {
+                    //printf("false sumL<20\n");
 			        return false;
 			    }
 			    double curAngle=sumAngle/sumL-CV_PI/4.0;//subtract 45 degree
 			    ori+=curAngle-mainAngle;
+                    //printf("true oriChange=%f\n",curAngle-mainAngle);
             }
 		}
 
