@@ -56,7 +56,7 @@ void Robot::turnLeft(float angle)
     ori -= angle*M_PI/180;
     ori = ori>2*M_PI?ori-2*M_PI:ori;
     ori = ori<0?ori+2*M_PI:ori;
-    motor_turnLeft(angle*M_PI/180);
+    motor_turnLeft((angle+TURN_LEFT_OFFSET)*M_PI/180);
     updateRadar();
 }
 
@@ -65,7 +65,7 @@ void Robot::turnRight(float angle)
     ori += angle*M_PI/180;
     ori = ori>2*M_PI?ori-2*M_PI:ori;
     ori = ori<0?ori+2*M_PI:ori;
-    motor_turnRight(angle*M_PI/180);
+    motor_turnRight((angle+TURN_RIGHT_OFFSET)*M_PI/180);
     updateRadar();
 }
 
@@ -75,29 +75,29 @@ void Robot::drawMap()
     for(int i=0; i<12; i++)
     {
         getImage();
-        //adjustWorldCoordinate(image_r,0);
+        adjustWorldCoordinate(image_r,0);
         cvWaitKey(100);
         worldMap.updateMap(image_r);
         locateOwnGate();
         turnRight(30);
     }
 
-    //getImage();
-    //adjustWorldCoordinate(image_r,2);
-    //adjustWorldCoordinate(image_r,1);
-    //rotateTo(cv::Point2f(0,1));
+    getImage();
+    adjustWorldCoordinate(image_r,2);
+    adjustWorldCoordinate(image_r,1);
+    rotateTo(cv::Point2f(0,1));
     moveForward(200, 20);
     for(int i=0;i<12;i++)
     {
         getImage();
-        //adjustWorldCoordinate(image_r,0);
+        adjustWorldCoordinate(image_r,0);
         worldMap.updateMap(image_r);
         turnRight(30);
     }
     getImage();
-    //adjustWorldCoordinate(image_r,2);
-    //adjustWorldCoordinate(image_r,1);
-    //rotateTo(cv::Point2f(0,1));
+    adjustWorldCoordinate(image_r,2);
+    adjustWorldCoordinate(image_r,1);
+    rotateTo(cv::Point2f(0,1));
 }
 
 void Robot::getImage()
@@ -539,15 +539,15 @@ void Robot::shoot()
     updateRadar();
     if(turn)
     {
-        //getImage();
-        //adjustWorldCoordinate(image_r,1);
+        getImage();
+        adjustWorldCoordinate(image_r,1);
         moveTo(turningPoint,30);
     }
-    //getImage();
-    //adjustWorldCoordinate(image_r,1);
+    getImage();
+    adjustWorldCoordinate(image_r,1);
     moveTo(shootPrepPosition,30);
-    //getImage();
-    //adjustWorldCoordinate(image_r,1);
+    getImage();
+    adjustWorldCoordinate(image_r,1);
     moveTo(targetPosition,50);
     shootRoute.clear();
     updateRadar();
@@ -1094,11 +1094,11 @@ bool Robot::adjustWorldCoordinate(IplImage* image, double coordAdjustRate)
                 myLine templ(tmpp[0],tmpp[1]);
                 if(templ.l>LINE_LENGTH_LBOUND)
                     tmplines.push_back(templ);
-//				printf("length=%f angle=%f\n",sqrt(float((tmpl[1].y-tmpl[0].y)*(tmpl[1].y-tmpl[0].y));
+//				//printf("length=%f angle=%f\n",sqrt(float((tmpl[1].y-tmpl[0].y)*(tmpl[1].y-tmpl[0].y));
 				//	+float((tmpl[1].x-tmpl[0].x)*(tmpl[1].x-tmpl[0].x)))
 				//	,atan2(float(tmpl[1].y-tmpl[0].y),float(tmpl[1].x-tmpl[0].x)));
 			}
-			printf("\n");
+			//printf("\n");
 			cvNamedWindow( "Source", 1 );
 			cvShowImage( "Source", img );
 
@@ -1186,18 +1186,18 @@ bool Robot::adjustWorldCoordinate(IplImage* image, double coordAdjustRate)
 			    }
 			    if(sumL==0)
 			    {
-                    printf("false 2 sumL=0\n");
+                    //printf("false 2 sumL=0\n");
 			        return false;
 			    }
 			    mainAngle=sumAngle/sumL;
 			    mainGroupId=maxValueGroup;
-			    printf("mainAngle=%f mainGroupId=%d\n",mainAngle,mainGroupId);
+			    //printf("mainAngle=%f mainGroupId=%d\n",mainAngle,mainGroupId);
 			}
 			else if(coordAdjustRate==1)
             {
                 CvRect bBox=worldMap.getMap_bbox();
-                    printf("in func param=1\n");
-                    printf("tmplines.size=%d\n",tmplines.size());
+                    //printf("in func param=1\n");
+                    //printf("tmplines.size=%d\n",tmplines.size());
                 for(i=0;i<tmplines.size();++i)
                 {
                     cv::Point2f imgPos=world2image(tmplines[i].p[0]);
@@ -1231,7 +1231,7 @@ bool Robot::adjustWorldCoordinate(IplImage* image, double coordAdjustRate)
 			            //if(minAngle<CV_PI/6.0)
                         tmplines[i].clsId=mainGroupId*2+minAnglePhase;
                         classified=true;
-                        printf("nearest main ori found. angle diff=%f\n",minAngle);
+                        //printf("nearest main ori found. angle diff=%f\n",minAngle);
 			        }
 			    }
 			    double sumAngle=0;
@@ -1240,7 +1240,7 @@ bool Robot::adjustWorldCoordinate(IplImage* image, double coordAdjustRate)
 			    {
 			        if(tmplines[i].clsId/2==mainGroupId)
 			        {
-                    printf("comparing with a main line..i=%d\n",i);
+                    //printf("comparing with a main line..i=%d\n",i);
 			            double angle=tmplines[i].theta+CV_PI/4.0;//similar strategy, add 45 degree
 			            if(angle<0)
                             angle+=CV_PI*2.0;
@@ -1251,12 +1251,12 @@ bool Robot::adjustWorldCoordinate(IplImage* image, double coordAdjustRate)
 			    }
 			    if(sumL<LINE_LENGTH_SUM_LBOUND)
 			    {
-                    printf("false sumL=%f<%d\n",sumL,LINE_LENGTH_SUM_LBOUND);
+                    //printf("false sumL=%f<%d\n",sumL,LINE_LENGTH_SUM_LBOUND);
 			        return false;
 			    }
 			    double curAngle=sumAngle/sumL-CV_PI/4.0;//subtract 45 degree
 			    ori+=curAngle-mainAngle;
-                    printf("true oriChange=%f\n",curAngle-mainAngle);
+                    //printf("true oriChange=%f\n",curAngle-mainAngle);
             }
 		}
 
