@@ -77,6 +77,9 @@ void Robot::drawMap()
     for(int i=0; i<12; i++)
     {
         getImage();
+
+        adjustWorldCoordinate(image_r,0);
+
 /*
         if(i < 10){
             filename[0] = char(i+'0');
@@ -84,6 +87,7 @@ void Robot::drawMap()
             cvSaveImage(filename, image_r);
         }
 */
+
         //cvNamedWindow("src", CV_WINDOW_AUTOSIZE);
         //cvMoveWindow("src", 512, 512);
         //cvShowImage("src", image_r);
@@ -96,6 +100,7 @@ void Robot::drawMap()
     for(int i=0;i<12;i++)
     {
         getImage();
+        adjustWorldCoordinate(image_r,0);
         worldMap.updateMap(image_r);
         turnRight(30);
     }
@@ -375,7 +380,14 @@ void* keeperMotionThread(void* params)
     while(!robot.abort)
     {
         moveDist += v_level*DELTA_V*DELTA_T/float(1e6);
-        v_level += getAcc(v_level,targetDist-moveDist);
+        int acc = getAcc(v_level,targetDist-moveDist);
+        v_level += acc;
+        cv::Point2f ori_dir(sin(ori),cos(ori));
+        cv::Point2f tar_dir(robot.ownGoal_frontDir.y,-robot.ownGoal_frontDir.x);
+        if(v_level==0 && acc==0 && acos(ori_dir.dot(tar_dir))>ORI_TOL*M_PI/180)
+        {
+            robot.rotateTo(tar_dir);
+        }
         sendAA(v_level*DELTA_V,v_level*DELTA_V);
         //printf("dist = %f\n",targetDist-moveDist);
         usleep(DELTA_T);
@@ -519,8 +531,16 @@ void Robot::shoot()
     shootRoute.push_back(targetPosition);
     updateRadar();
     if(turn)
+    {
+        getImage();
+        adjustWorldCoordinate(image_r,1);
         moveTo(turningPoint,30);
+    }
+    getImage();
+    adjustWorldCoordinate(image_r,1);
     moveTo(shootPrepPosition,30);
+    getImage();
+    adjustWorldCoordinate(image_r,1);
     moveTo(targetPosition,50);
     shootRoute.clear();
     updateRadar();
@@ -855,7 +875,7 @@ void* stopKeeperThread(void * args){
                     return NULL;
                 }//if
             }//else
-        }//wile
+        }//while
     }
     return NULL;
 }
@@ -1019,7 +1039,201 @@ void  Robot::listenAndAct(){
     }
 }
 
-void adjustWorldCoordinate()
+bool Robot::adjustWorldCoordinate(const IplImage* image, double coordAdjustRate)
 {
+    IplImage *img;
+    if(image->nChannels==3)
+    {
+        IplImage *hsv_img = get_hsv(image);
+
+        img=worldMap.getField(hsv_img);
+    }
+    else
+    {
+        img=image;
+    }
+
+		if( img != 0 )
+		{
+			IplImage* dst = cvCreateImage( cvGetSize(img), 8, 1 );
+			IplImage* color_dst = cvCreateImage( cvGetSize(img), 8, 3 );
+			CvMemStorage* storage = cvCreateMemStorage(0);
+			CvSeq* ls = 0;
+			int i;
+            IplImage* src1=cvCreateImage(cvGetSize(img),IPL_DEPTH_8U,1);
+
+            cvCvtColor(img, src1, CV_BGR2GRAY);
+			cvCanny( src1, dst, 50, 200, 3 );
+
+			cvCvtColor( dst, color_dst, CV_GRAY2BGR );
+
+			ls = cvHoughLines2( dst, storage, CV_HOUGH_PROBABILISTIC, 2, CV_PI/90, 20, 5, 30 );
+			//ls = cvHoughLines2( dst, storage, CV_HOUGH_PROBABILISTIC, 5, CV_PI/30, 10, 20, 5 );
+			vector<myLine> tmplines;
+			for( i = 0; i < ls->total; i++ )
+			{
+				CvPoint* tmpl = (CvPoint*)cvGetSeqElem(ls,i);
+				cvLine( color_dst, tmpl[0], tmpl[1], CV_RGB(255,0,0), 1, 8 );
+
+                cv::Point2f tmpp[2];
+                cv::Point2f scrPos(tmpl[0].x,tmpl[0].y);
+                cv::Point2f roboPos=worldMap.coord_screen2robot(scrPos,true);
+                cv::Point2f worldPos=worldMap.coord_robot2world(roboPos);
+                tmpp[0]=worldPos;
+                cv::Point2f scrPos(tmpl[1].x,tmpl[1].y);
+                cv::Point2f roboPos=worldMap.coord_screen2robot(scrPos,true);
+                cv::Point2f worldPos=worldMap.coord_robot2world(roboPos);
+                tmpp[1]=worldPos;
+				tmplines.push_back(myLine(tmpp[0],tmpp[1]));
+				//printf("length=%f angle=%f\n",sqrt(float((tmpl[1].y-tmpl[0].y)*(tmpl[1].y-tmpl[0].y))
+				//	+float((tmpl[1].x-tmpl[0].x)*(tmpl[1].x-tmpl[0].x)))
+				//	,atan2(float(tmpl[1].y-tmpl[0].y),float(tmpl[1].x-tmpl[0].x)));
+			}
+			//printf("\n");
+			cvNamedWindow( "Source", 1 );
+			cvShowImage( "Source", img );
+
+			cvNamedWindow( "Hough", 1 );
+			cvShowImage( "Hough", color_dst );
+
+			cvWaitKey(10);
+			if(coordAdjustRate==0)
+			{
+                for(i=0;i<tmplines.size();++i)
+                {
+                    lines.push_back(tmplines[i]);
+                }
+			}
+			else if(coordAdjustRate==2)
+			{
+                for(i=0;i<tmplines.size();++i)
+                {
+                    lines.push_back(tmplines[i]);
+                }
+                //vector<double> oris;
+                vector<int> lineNums;
+                vector<double> lineValues;
+                int groupId=0;
+			    for(i=0;i<lines.size();++i)
+			    {
+			        bool classified=false;
+			        int j;
+			        for(j=0;j<i;++j)
+			        {
+			            double angle=lines[i].theta-lines[j].theta+CV_PI/4.0;   //to make the process simple, add 45 degree
+                                                                                //to turn the cared angles to the middle of a phase
+			            if(angle<0)
+                            angle+=CV_PI*2.0;
+			            int phase=(int)(angle/(CV_PI/2.0));
+			            double angle90=angle-CV_PI/2.0*(double)phase;
+			            phase%=2;
+			            if(abs(angle90-CV_PI/4.0)<CV_PI/60.0)//subtract the added 45 degree
+			            {
+			                line[i].clsId=line[j].clsId/2*2+phase;
+			                ++lineNums[line[i].clsId];
+			                lineValues[line[i].clsId]+=line[i].l;
+			                classified=true;
+			                break;
+			            }
+			        }
+			        if(classified==false)
+			        {
+			            line[i].clsId=groupId;
+                        lineNums.push_back(1);
+                        lineNums.push_back(0);
+                        lineValues.push_back(line[i].l);
+                        lineValues.push_back(0);
+			            groupId+=2;
+			        }
+			    }
+			    int maxValueGroup=0;
+			    double maxValue=0;
+			    for(i=0;i<lineNums.size();i+=2)
+			    {
+			        if(lineValues[i]+lineValues[i+1]>maxValue)
+			        {
+			            maxValue=lineValues[i]+lineValues[i+1];
+			            maxValueGroup=i;
+			        }
+			    }
+			    maxValueGroup/=2;
+			    double sumAngle=0;
+			    double sumL=0;
+			    for(i=0;i<lines.size();++i)
+			    {
+			        if(lines[i].clsId/2=maxValueGroup)
+			        {
+			            double angle=lines[i].theta+CV_PI/4.0;//similar strategy, add 45 degree
+			            if(angle<0)
+                            angle+=CV_PI*2.0;
+			            double angle90=angle-CV_PI/2.0*double((int)(angle/(CV_PI/2.0));
+			            sumAngle+=(angle90-CV_PI/4.0)*lines[i].l;//subtract 45 degree
+			            sumL+=lines[i].l;
+			        }
+			    }
+			    if(sumL==0)
+			    {
+			        return false;
+			    }
+			    mainAngle=sumAngle/sumL;
+			    mainGroupId=maxValueGroup;
+			}
+			else if(coordAdjustRate==1)
+            {
+                for(i=0;i<tmplines.size();++i)
+                {
+			        bool classified=false;
+			        double minAngle=CV_PI;
+			        int minAnglePhase=0;
+			        int bestJ=-1;
+			        int j;
+			        for(j=0;j<lines.size();++j)
+			        {
+			            if(lines[j].clsId/2!=mainGroupId)
+                            continue;
+			            double angle=tmplines[i].theta-lines[j].theta+CV_PI/4.0;   //to make the process simple, add 45 degree
+                                                                                //to turn the cared angles to the middle of a phase
+			            if(angle<0)
+                            angle+=CV_PI*2.0;
+			            int phase=(int)(angle/(CV_PI/2.0));
+			            double angle90=angle-CV_PI/2.0*(double)phase;
+			            phase%=2;
+			            if(abs(angle90-CV_PI/4.0)<minAngle)//subtract the added 45 degree
+			            {
+			                minAngle=abs(angle90-CV_PI/4.0);
+			                bestJ=j;
+                            minAnglePhase=phase;
+			            }
+			        }
+			        if(bestJ>-1)
+			        {
+			            //if(minAngle<CV_PI/6.0)
+                        tmpline[i].clsId=mainGroupId+minAnglePhase;
+                        classified=true;
+			        }
+			    }
+			    double sumAngle=0;
+			    double sumL=0;
+			    for(i=0;i<tmplines.size();++i)
+			    {
+			        if(tmplines[i].clsId/2==mainGroupId)
+			        {
+			            double angle=tmplines[i].theta+CV_PI/4.0;//similar strategy, add 45 degree
+			            if(angle<0)
+                            angle+=CV_PI*2.0;
+			            double angle90=angle-CV_PI/2.0*double((int)(angle/(CV_PI/2.0));
+			            sumAngle+=angle90*tmplines[i].l;//use the 45 degree to balance the unwanted lines
+			            sumL+=tmplines[i].l;
+			        }
+			    }
+			    if(sumL<20)
+			    {
+			        return false;
+			    }
+			    double curAngle=sumAngle/sumL-CV_PI/4.0;//subtract 45 degree
+			    ori+=curAngle-mainAngle;
+            }
+		}
+
     return;
 }

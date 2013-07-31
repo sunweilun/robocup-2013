@@ -2,6 +2,7 @@
 #define MIN_BALL_SPEED_TO_KEEP 20
 #define KEEPER_DIST2GOAL 50
 #define EXTRA_WAIT_TIME 3
+#define ORI_TOL 20
 
 #define DELTA_T 50000
 #define DELTA_V 5
