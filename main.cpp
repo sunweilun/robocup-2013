@@ -15,7 +15,7 @@ int main()
     Robot robot;
     robot.radarOn();
     char ipStr[50];
-    strcpy(ipStr, "101.5.146.108");
+    strcpy(ipStr, "101.5.146.224");
     int host = 9999;
     int socket_fd = robot.init_socket(ipStr, host);
     if(socket_fd == 0){

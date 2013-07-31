@@ -85,7 +85,7 @@ int* ImageProcessor::scanUp(IplImage* blue){
         bound[i] = -1;
     }
     float* blue_data = (float*)blue->imageData;
-
+    int avg_j = 0, avg_i = 0, n = 0;
     float h = 0, s= 0, v = 0;
     for(int j = 0; j < width; j++){
         for(int i = height-1; i >= 0; i--){
@@ -95,6 +95,29 @@ int* ImageProcessor::scanUp(IplImage* blue){
             if(inBound(h, s, v)){
                 if(stepUpJudge(blue, i, j)){
                     bound[j] = i;
+                    avg_j += j;
+                    avg_i += i;
+                    n++;
+                    break;
+                }
+            }//if inbound
+        }//for in
+    }//for out
+    if(n > 10){
+        avg_i /= n; avg_j /= n;
+        int lend = avg_j-1, rend = avg_j+1;
+        for(lend = avg_j-1; lend >= 0; lend --){
+            if(abs(bound[lend]-bound[lend+1]) > 3){
+                for(int k = lend; k >= 0; k--){
+                    bound[k] = -1;
+                }
+                break;
+            }
+        }
+        for(rend = avg_j+1; rend < 320; rend++){
+            if(abs(bound[rend]-bound[rend-1]) > 3){
+                for(int k = rend; k < 320; k++){
+                    bound[k] = -1;
                 }
                 break;
             }

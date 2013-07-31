@@ -72,10 +72,22 @@ void Robot::turnRight(float angle)
 void Robot::drawMap()
 {
     getImage();
+   // char filename[20];
+    //strcpy(filename, "0.png");
     for(int i=0; i<12; i++)
     {
         getImage();
+
         adjustWorldCoordinate(image_r,0);
+
+/*
+        if(i < 10){
+            filename[0] = char(i+'0');
+            filename[5] = '\0';
+            cvSaveImage(filename, image_r);
+        }
+*/
+
         //cvNamedWindow("src", CV_WINDOW_AUTOSIZE);
         //cvMoveWindow("src", 512, 512);
         //cvShowImage("src", image_r);
@@ -84,7 +96,7 @@ void Robot::drawMap()
         locateOwnGate();
         turnRight(30);
     }
-    moveForward(100, 20);
+    moveForward(200, 20);
     for(int i=0;i<12;i++)
     {
         getImage();
@@ -545,9 +557,10 @@ void Robot::spin() {//}std::vector<cv::Point2f> balls) {
     printf("%f %f\n %f %f\n", ball1.x, ball1.y, ball2.x, ball2.y);
     //cvWaitKey();
     //get them by some means of find balls
-    float delta =  40;
+    float delta =  30;
     float r12 =  cal_distance(ball1, ball2) / 2;
     float rspin = (delta * delta + r12 * r12) / (2 * delta);
+    rspin += 10;
     float disr1 =  cal_distance(ball1, robot_coord);
     int  inrspin = 0;
     while(inrspin < rspin)
@@ -577,9 +590,9 @@ void Robot::spin() {//}std::vector<cv::Point2f> balls) {
     //cvWaitKey();
     turnRight(arc * 180 / M_PI);
     //cvWaitKey()
-    moveRotate(true, rspin, arc * 2);//!!!
+    moveRotate(true, rspin, arc * 2 + 0.2);//!!!
     //cvWaitKey();
-    moveRotate(false, rspin, arc * 2);
+    moveRotate(false, rspin, arc * 2 + 0.2);
     /*if (turn > 0) {
         turnRight(arc);
         moveRotate(true, inrspin, 2 * M_PI - arc);
@@ -921,6 +934,19 @@ void  Robot::listenAndAct(){
                     }
                     else{
                         printf("send shoot_ack success\n");
+                    }
+                }
+                else if(recvCmd == "spin"){
+                    printf("receive spin\n");
+                    //do something
+                    spin();
+                    char tmp[BUFFER_SIZE];
+                    strcpy(tmp, "spin_ack");
+                    if (send(socket_fd, tmp, (int)strlen(tmp), 0) < 0){
+                        printf("send spin_ack fail\n");
+                    }
+                    else{
+                        printf("send spin_ack success\n");
                     }
                 }
                 else if(recvCmd == "exit"){
