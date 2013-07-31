@@ -30,9 +30,9 @@ int main()
     Robot robot;
     robot.radarOn();
     robot.drawMap();
-    robot.keepGoal();
+    //robot.keepGoal();
     //robot.findBall();
-    //robot.shoot();
+    robot.shoot();
     //robot.findBall();
     //robot.shoot();
     //robot.spin();

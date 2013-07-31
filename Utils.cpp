@@ -215,11 +215,3 @@ int getAcc(int k,float dist)
     else
         return 0;
 }
-
-double calcAngle(const cv::Point2f &p1, const cv::Point2f &p2)
-{
-    double ret=atan2(p2.y,p2.x)-atan2(p1.y,p2.x);
-    if(abs(ret)>CV_PI)
-        ret=CV_PI*2-ret%(CV_PI*2);
-    return ret;
-}

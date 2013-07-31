@@ -382,7 +382,7 @@ void* keeperMotionThread(void* params)
         moveDist += v_level*DELTA_V*DELTA_T/float(1e6);
         int acc = getAcc(v_level,targetDist-moveDist);
         v_level += acc;
-        cv::Point2f ori_dir(sin(ori),cos(ori));
+        cv::Point2f ori_dir(sin(robot.ori),cos(robot.ori));
         cv::Point2f tar_dir(robot.ownGoal_frontDir.y,-robot.ownGoal_frontDir.x);
         if(v_level==0 && acc==0 && acos(ori_dir.dot(tar_dir))>ORI_TOL*M_PI/180)
         {
@@ -1039,7 +1039,7 @@ void  Robot::listenAndAct(){
     }
 }
 
-bool Robot::adjustWorldCoordinate(const IplImage* image, double coordAdjustRate)
+bool Robot::adjustWorldCoordinate(IplImage* image, double coordAdjustRate)
 {
     IplImage *img;
     if(image->nChannels==3)
@@ -1080,9 +1080,9 @@ bool Robot::adjustWorldCoordinate(const IplImage* image, double coordAdjustRate)
                 cv::Point2f roboPos=worldMap.coord_screen2robot(scrPos,true);
                 cv::Point2f worldPos=worldMap.coord_robot2world(roboPos);
                 tmpp[0]=worldPos;
-                cv::Point2f scrPos(tmpl[1].x,tmpl[1].y);
-                cv::Point2f roboPos=worldMap.coord_screen2robot(scrPos,true);
-                cv::Point2f worldPos=worldMap.coord_robot2world(roboPos);
+                scrPos=cv::Point2f(tmpl[1].x,tmpl[1].y);
+                roboPos=worldMap.coord_screen2robot(scrPos,true);
+                worldPos=worldMap.coord_robot2world(roboPos);
                 tmpp[1]=worldPos;
 				tmplines.push_back(myLine(tmpp[0],tmpp[1]));
 				//printf("length=%f angle=%f\n",sqrt(float((tmpl[1].y-tmpl[0].y)*(tmpl[1].y-tmpl[0].y))
@@ -1129,19 +1129,19 @@ bool Robot::adjustWorldCoordinate(const IplImage* image, double coordAdjustRate)
 			            phase%=2;
 			            if(abs(angle90-CV_PI/4.0)<CV_PI/60.0)//subtract the added 45 degree
 			            {
-			                line[i].clsId=line[j].clsId/2*2+phase;
-			                ++lineNums[line[i].clsId];
-			                lineValues[line[i].clsId]+=line[i].l;
+			                lines[i].clsId=lines[j].clsId/2*2+phase;
+			                ++lineNums[lines[i].clsId];
+			                lineValues[lines[i].clsId]+=lines[i].l;
 			                classified=true;
 			                break;
 			            }
 			        }
 			        if(classified==false)
 			        {
-			            line[i].clsId=groupId;
+			            lines[i].clsId=groupId;
                         lineNums.push_back(1);
                         lineNums.push_back(0);
-                        lineValues.push_back(line[i].l);
+                        lineValues.push_back(lines[i].l);
                         lineValues.push_back(0);
 			            groupId+=2;
 			        }
@@ -1161,12 +1161,12 @@ bool Robot::adjustWorldCoordinate(const IplImage* image, double coordAdjustRate)
 			    double sumL=0;
 			    for(i=0;i<lines.size();++i)
 			    {
-			        if(lines[i].clsId/2=maxValueGroup)
+			        if(lines[i].clsId/2==maxValueGroup)
 			        {
 			            double angle=lines[i].theta+CV_PI/4.0;//similar strategy, add 45 degree
 			            if(angle<0)
                             angle+=CV_PI*2.0;
-			            double angle90=angle-CV_PI/2.0*double((int)(angle/(CV_PI/2.0));
+			            double angle90=angle-CV_PI/2.0*(double)((int)(angle/(CV_PI/2.0)));
 			            sumAngle+=(angle90-CV_PI/4.0)*lines[i].l;//subtract 45 degree
 			            sumL+=lines[i].l;
 			        }
@@ -1208,7 +1208,7 @@ bool Robot::adjustWorldCoordinate(const IplImage* image, double coordAdjustRate)
 			        if(bestJ>-1)
 			        {
 			            //if(minAngle<CV_PI/6.0)
-                        tmpline[i].clsId=mainGroupId+minAnglePhase;
+                        tmplines[i].clsId=mainGroupId+minAnglePhase;
                         classified=true;
 			        }
 			    }
@@ -1221,7 +1221,7 @@ bool Robot::adjustWorldCoordinate(const IplImage* image, double coordAdjustRate)
 			            double angle=tmplines[i].theta+CV_PI/4.0;//similar strategy, add 45 degree
 			            if(angle<0)
                             angle+=CV_PI*2.0;
-			            double angle90=angle-CV_PI/2.0*double((int)(angle/(CV_PI/2.0));
+			            double angle90=angle-CV_PI/2.0*double((int)(angle/(CV_PI/2.0)));
 			            sumAngle+=angle90*tmplines[i].l;//use the 45 degree to balance the unwanted lines
 			            sumL+=tmplines[i].l;
 			        }
@@ -1235,5 +1235,5 @@ bool Robot::adjustWorldCoordinate(const IplImage* image, double coordAdjustRate)
             }
 		}
 
-    return;
+    return true;
 }

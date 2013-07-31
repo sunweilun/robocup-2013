@@ -45,7 +45,7 @@ private:
     bool getBallInfo(cv::Point2f &ballVelocity,cv::Point2f &ballPosition);
     std::vector<cv::Point2f> shootRoute;
     void updateBallStatus();
-    bool adjustWorldCoordinate(double coordAdjustRate=0);
+    bool adjustWorldCoordinate(IplImage* image, double coordAdjustRate=0);
     double mainAngle;
     double mainGroupId;
     struct myLine
