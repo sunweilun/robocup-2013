@@ -56,7 +56,7 @@ void Robot::turnLeft(float angle)
     ori -= angle*M_PI/180;
     ori = ori>2*M_PI?ori-2*M_PI:ori;
     ori = ori<0?ori+2*M_PI:ori;
-    motor_turnLeft((angle+TURN_LEFT_OFFSET)*M_PI/180);
+    motor_turnLeft((angle+TURN_LEFT_OFFSET*angle/30.0)*M_PI/180);
     updateRadar();
 }
 
@@ -65,16 +65,21 @@ void Robot::turnRight(float angle)
     ori += angle*M_PI/180;
     ori = ori>2*M_PI?ori-2*M_PI:ori;
     ori = ori<0?ori+2*M_PI:ori;
-    motor_turnRight((angle+TURN_RIGHT_OFFSET)*M_PI/180);
+    motor_turnRight((angle+TURN_RIGHT_OFFSET*angle/30.0)*M_PI/180);
     updateRadar();
 }
 
 void Robot::drawMap()
 {
     getImage();
+    char filename[20];
+    strcpy(filename, "0.png");
     for(int i=0; i<12; i++)
     {
         getImage();
+        filename[0] = (char)(i+'0');
+        filename[5] = '\0';
+        cvSaveImage(filename, image_r);
         adjustWorldCoordinate(image_r,0);
         cvWaitKey(100);
         worldMap.updateMap(image_r);
@@ -86,7 +91,7 @@ void Robot::drawMap()
     adjustWorldCoordinate(image_r,2);
     adjustWorldCoordinate(image_r,1);
     rotateTo(cv::Point2f(0,1));
-    moveForward(200, 20);
+    /*moveForward(200, 20);
     for(int i=0;i<12;i++)
     {
         getImage();
@@ -97,7 +102,7 @@ void Robot::drawMap()
     getImage();
     adjustWorldCoordinate(image_r,2);
     adjustWorldCoordinate(image_r,1);
-    rotateTo(cv::Point2f(0,1));
+    rotateTo(cv::Point2f(0,1));*/
 }
 
 void Robot::getImage()
@@ -539,15 +544,15 @@ void Robot::shoot()
     updateRadar();
     if(turn)
     {
-        getImage();
-        adjustWorldCoordinate(image_r,1);
+        //getImage();
+        //adjustWorldCoordinate(image_r,1);
         moveTo(turningPoint,30);
     }
-    getImage();
-    adjustWorldCoordinate(image_r,1);
+    //getImage();
+    //adjustWorldCoordinate(image_r,1);
     moveTo(shootPrepPosition,30);
-    getImage();
-    adjustWorldCoordinate(image_r,1);
+    //getImage();
+    //adjustWorlfdCoordinate(image_r,1);
     moveTo(targetPosition,50);
     shootRoute.clear();
     updateRadar();
