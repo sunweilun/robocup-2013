@@ -675,17 +675,19 @@ bool Robot::locateBall()
     return true;
 }
 
+/*
+ * 找多个球，改编自单个球，返回vector数组
+ * 为了支持绕障碍功能
+ */
 std::vector<cv::Point2f> Robot::findMulBall()
 {
     getImage();
     std::vector<cv::Point2f> ans;
-    // std::vector<cv::Point3f> tmp;
     while (true) {
         if (!image_r)
             return ans;
         ip.setBound(BALL_BOUND);
         std::vector<cv::Point3f> tmp = ip.extractCircles(image_r);
-//        std::cout << "tmp size: " << tmp.size() << std::endl;
         if (tmp.size() <= 0) {
             turnRight(FIND_BALL_ANGLE);
             getImage();
@@ -703,8 +705,8 @@ std::vector<cv::Point2f> Robot::findMulBall()
             continue;
         }
         if (ans.size() == 1) {
+            //判断找到的是不是同一个球
             if (abs(ball_coord_sub.x - ans[0].x) <= 10 && abs(ball_coord_sub.y - ans[0].y) <= 10) {
-//                std::cout << "find the same ball!" << std::endl;
                 turnRight(FIND_BALL_ANGLE);
                 getImage();
                 continue;
@@ -713,7 +715,6 @@ std::vector<cv::Point2f> Robot::findMulBall()
         ans.push_back(ball_coord_sub);
         if (ans.size() > 1)
             break;
-//        cout << "ans size: " << ans.size() << std::endl;
         turnRight(FIND_BALL_ANGLE);
         getImage();
     }
