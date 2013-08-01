@@ -298,6 +298,8 @@ static int close_device(struct vd_capture * vd_cap) {
 	return 0;
 }
 
+/* 初始化视频设备
+ */
 
 static void init_video_work(struct vd_capture* c, int framerate, char * instrument_path) {
 	if(c == NULL) {
@@ -315,12 +317,19 @@ static void init_video_work(struct vd_capture* c, int framerate, char * instrume
 	}
 }
 
+/* 
+ * 捕获图像线程函数
+ * 分别得到左右摄像头的图像
+ * 获取图像需要加锁，以免和后面的图像存储冲突
+ */
+
 static void* myInit(void* arg) {
 	int captured1, captured2;
 	while(!c1->quit && !c2->quit) {
 		//开始采集视频数据
 		//waiting
 		usleep(2000);
+		//互斥锁
 		pthread_mutex_lock(&ca_mutex);
 		if((captured1=capture(c1)) < 0) {
 			break;
@@ -333,6 +342,11 @@ static void* myInit(void* arg) {
 	}
 }
 
+/*
+ * getphoto主函数
+ * 初始化摄像头、捕获线程
+ */
+
 static void  ptInit() {
     pthread_mutex_init(&ca_mutex, NULL);
     int framerate = 20;
@@ -342,15 +356,22 @@ static void  ptInit() {
 	init_video_work(c2, framerate, "/dev/video1");
 
     pthread_t pt;
+    //初始化捕获图片线程
     pthread_create(&pt, NULL, myInit, NULL);
     usleep(2000);
 
 }
 
+/*
+ * 主函数，得到捕获的图片，解码成jpeg，然后存入IplImage
+ * 读取的时候需要加上互斥锁
+ */
+
 static void getPhoto2(IplImage *image_l, IplImage *image_r) {
 	unsigned char tmpbuf[2][250000];
 
 	usleep(2000);
+	//加锁，拷贝出一份备份
 	pthread_mutex_lock(&ca_mutex);
 	memcpy(tmpbuf[0], c1->framebuffer, (size_t)c1->framesize);
 	memcpy(tmpbuf[1], c2->framebuffer, (size_t)c2->framesize);
@@ -360,7 +381,9 @@ static void getPhoto2(IplImage *image_l, IplImage *image_r) {
 	struct jpeg_decompress_struct* jpeg_decompressor = newDecompressor ( 320 );
 	long rgbbuffersize = 320*240*3;
 	unsigned char rgbbuffer[rgbbuffersize];
+	//左右摄像头
 	for (int i = 0; i != 2; ++i) {
+		//解码
 		if (read_JPEG_buffer(jpeg_decompressor, tmpbuf[i], 320*240*2, rgbbuffer, rgbbuffersize, NULL, 0) != 1) {
 			fprintf(stderr, "\nerror while decoding jpeg files.\n");
 			if (isfatalerror()) {
@@ -370,11 +393,11 @@ static void getPhoto2(IplImage *image_l, IplImage *image_r) {
 			}
 			return;
 		}
-
+		//将得到的jpeg格式内存块存入Iplimage
 		if (i == 0) {	//left
 		    memcpy(image_l->imageData, rgbbuffer, rgbbuffersize);
 		} else {	//right
 			memcpy(image_r->imageData, rgbbuffer, rgbbuffersize);
 		}
-		}
+	}
 }
