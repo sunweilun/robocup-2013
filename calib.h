@@ -4,7 +4,7 @@
 
 #define MAX_POINTS 100
 
-IplImage* enlarge(const IplImage *orig_image)
+IplImage* enlarge(const IplImage *orig_image)//放大图像便于标定
 {
     IplImage *image = cvCreateImage(cvSize(orig_image->width<<1,orig_image->height<<1),IPL_DEPTH_8U,3);
     for(int x=0;x<image->width;x++)
@@ -38,7 +38,7 @@ IplImage* enlarge(const IplImage *orig_image)
     return image;
 }
 
-void mouse_cb(int event,int x,int y,int flags,void* param)
+void mouse_cb(int event,int x,int y,int flags,void* param)//鼠标点击屏幕图像标定
 {
     void** ptrs = (void**) param;
     CvPoint* sc = (CvPoint*) ptrs[0];
@@ -49,7 +49,7 @@ void mouse_cb(int event,int x,int y,int flags,void* param)
 
     switch(event)
     {
-    case CV_EVENT_LBUTTONDOWN:
+    case CV_EVENT_LBUTTONDOWN://左键点击确定标定点
         printf("NewPoint:\n    (x,y):");
         sc[*np].x = (x>>1);
         sc[*np].y = (y>>1);
@@ -62,7 +62,7 @@ void mouse_cb(int event,int x,int y,int flags,void* param)
         //printf("*np=%d\n",*np);
         *next = true;
         break;
-    case CV_EVENT_RBUTTONDOWN:
+    case CV_EVENT_RBUTTONDOWN://右键结束标定开始计算
         *next = false;
         break;
     }
@@ -165,7 +165,7 @@ void CalTransMat(CvMat *TranMat, int points, CvPoint *ImagPosition, CvPoint *Rea
 }
 //***************Calculate TransMatrixEnd****************
 
-void calib(bool isRight)
+void calib(bool isRight)//标定程序入口
 {
     CvPoint sc[100],rc[100];
     int np = 0;

@@ -128,9 +128,7 @@ void Robot::moveRotate(bool isLeft, float radius, float arc)
 {
     if (isLeft)
     {
-       /* x += 2 * radius * sin(arc / 2) * cos(ori + arc / 2);
-        y += 2 * radius * sin(arc / 2) * sin(ori + arc / 2);
-        ori = ori - arc;*/
+	//worldmap operation
         cv::Point2f center(x,y);
         cv::Point2f vec_r(radius*cos(ori),-radius*sin(ori));
         center = center - vec_r;
@@ -142,19 +140,15 @@ void Robot::moveRotate(bool isLeft, float radius, float arc)
         y += shift.y;
         ori -= arc;
         ori = ori<0?ori+2*M_PI:(ori>2*M_PI?ori-2*M_PI:ori);
-
+	//motor operation
         int min1 = 0, min2 = 0;
         float mind = 10000;
         float radio = (radius + DIST_BETWEEN_WHEELS / 2) / (radius - DIST_BETWEEN_WHEELS / 2);
-        //printf("%f\n", radio);
         float nowr;
-        for (int i = 30; i >= 2; i--)
+        for (int i = 30; i >= 2; i--)//枚举搜索一定速度范围内最接近内外轮半径比的左右轮轮速比
             for (int j = 1; j < i; j++) {
                 nowr = i *1.0 / j;
-                //printf("%f %d %d\n", nowr, i, j);
                 if (myabs(nowr - radio) < mind) {
-                    //printf("changed! %f < %f\n", myabs(nowr-radio) , mind);
-                    //cvWaitKey();
                     mind = myabs(nowr - radio);
                     min1 = i;
                     min2 = j;
@@ -162,15 +156,11 @@ void Robot::moveRotate(bool isLeft, float radius, float arc)
             }
             float t = (((arc - ARC_DELAY) * (radius + DIST_BETWEEN_WHEELS / 2) / min1)
                                 + ((arc - ARC_DELAY) * (radius - DIST_BETWEEN_WHEELS / 2) / min2)) / 2;
-            //printf("%d %d %f", min1, min2, t);
-            //cvWaitKey();
             goWithSpeed(min2, min1, t);
     }
     else  //turn right
     {
-        //x += 2 * radius * sin(arc / 2) * cos(ori + arc / 2 - M_PI_2);
-        //y += 2 * radius * sin(arc / 2) * sin(ori + arc / 2 - M_PI_2);
-        //ori = ori + arc;
+	//vice vesa
         cv::Point2f center(x,y);
         cv::Point2f vec_r(-radius*cos(ori),radius*sin(ori));
         center = center - vec_r;
@@ -182,19 +172,15 @@ void Robot::moveRotate(bool isLeft, float radius, float arc)
         y += shift.y;
         ori += arc;
         ori = ori<0?ori+2*M_PI:(ori>2*M_PI?ori-2*M_PI:ori);
-
+	//vice vesa
         int min1 = 0, min2 = 0;
         float mind = 10000;
         float radio = (radius + DIST_BETWEEN_WHEELS / 2) / (radius - DIST_BETWEEN_WHEELS / 2);
-        //printf("%f\n", radio);
         float nowr;
         for (int i = 30; i >= 2; i--)
             for (int j = 1; j < i; j++) {
                 nowr = i *1.0 / j;
-                //printf("%f %d %d\n", nowr, i, j);
                 if (myabs(nowr - radio) < mind) {
-                    //printf("changed! %f < %f\n", myabs(nowr-radio) , mind);
-                    //cvWaitKey();
                     mind = myabs(nowr - radio);
                     min1 = i;
                     min2 = j;
@@ -202,8 +188,6 @@ void Robot::moveRotate(bool isLeft, float radius, float arc)
             }
             float t = (((arc - ARC_DELAY) * (radius + DIST_BETWEEN_WHEELS / 2) / min1)
                                 + ((arc - ARC_DELAY) * (radius - DIST_BETWEEN_WHEELS / 2) / min2)) / 2;
-            //printf("%d %d %f", min1, min2, t);
-            //cvWaitKey();
             goWithSpeed(min1, min2, t);
     }
 }
@@ -213,8 +197,6 @@ void Robot::moveTo(const cv::Point2f& wCoord,float max_speed)
 {
     cv::Point2f robotPosition(x,y);
     cv::Point2f delta = wCoord - robotPosition;
-    //printf("%f %f\n", wCoord.x, wCoord.y);
-    //printf("%f %f\n", delta.x, delta.y);
     float delta_len = length(delta);
     if (delta_len <= 0)
         return;
@@ -226,13 +208,11 @@ void Robot::moveTo(const cv::Point2f& wCoord,float max_speed)
 
 void Robot::rotateTo(const cv::Point2f &new_dir)
 {
-    //printf("%f %f\n", new_dir.x, new_dir.y);
     cv::Point2f dir(sin(ori),cos(ori));
     float cross = dir.x*new_dir.y-dir.y*new_dir.x;
     float dot = new_dir.dot(dir);
     dot = dot>1?1:(dot<-1?-1:dot);
     float angle = acos(dot);
-    //printf("angle = %f\n",angle);
     if(cross<0)
         turnRight(angle*180/M_PI);
     else
@@ -558,65 +538,38 @@ void Robot::shoot()
     updateRadar();
 }
 
-void Robot::spin() {//}std::vector<cv::Point2f> balls) {
+void Robot::spin() {//S型过人
     cv::Point2f robot_coord(x, y);
-    //printf("find %d balls\n", balls.size());
-    //if (balls.size() < 2)
-     //   return;
     std::vector<cv::Point2f> ans = findMulBall();
-    cv::Point2f ball1 = ans[0];// = balls[0];
-    cv::Point2f ball2 = ans[1];// = balls[1];
-    printf("%f %f\n %f %f\n", ball1.x, ball1.y, ball2.x, ball2.y);
-    //cvWaitKey();
-    //get them by some means of find balls
+    cv::Point2f ball1 = ans[0];
+    cv::Point2f ball2 = ans[1];
+    //printf("%f %f\n %f %f\n", ball1.x, ball1.y, ball2.x, ball2.y);
     float delta =  30;
     float r12 =  cal_distance(ball1, ball2) / 2;
     float rspin = (delta * delta + r12 * r12) / (2 * delta);
-    rspin += 10;
+    rspin += 10;//误差修正
     float disr1 =  cal_distance(ball1, robot_coord);
     int  inrspin = 0;
     while(inrspin < rspin)
         inrspin++;
-    printf("rspin:%f, disr1:%f, inrspin:%d\n", rspin, disr1, inrspin);
-    //cvWaitKey();
+    //printf("rspin:%f, disr1:%f, inrspin:%d\n", rspin, disr1, inrspin);
     cv::Point2f rto1 = ball1 - robot_coord;
     cv::Point2f b1to2 = ball2 - ball1;
 
     float arc = asin(r12 / rspin);
-    //float turn = a.x * b.y - a.y * b.x;
-    //printf("a.x:%f, a.y:%f\n", a.x, a.y);
-    //cvWaitKey();
     cv::Point2f pturn1(ball1.x -  b1to2.x * 0.5, ball1.y - b1to2.y *0.5);
 
-     //cvWaitKey();
     moveTo(pturn1, 20);
     cv::Point2f robotPosition(x,y);
     cv::Point2f dir= ball1 - robotPosition;
-    //printf("%f %f\n", wCoord.x, wCoord.y);
-    //printf("%f %f\n", delta.x, delta.y);
     float dir_len = length(dir);
     if (dir_len <= 0)
         return;
     cv::Point2f new_dir = dir*(1/dir_len);
     rotateTo(new_dir);
-    //cvWaitKey();
     turnRight(arc * 180 / M_PI);
-    //cvWaitKey()
-    moveRotate(true, rspin, arc * 2 + 0.2);//!!!
-    //cvWaitKey();
+    moveRotate(true, rspin, arc * 2 + 0.2);//误差修正
     moveRotate(false, rspin, arc * 2 + 0.2);
-    /*if (turn > 0) {
-        turnRight(arc);
-        moveRotate(true, inrspin, 2 * M_PI - arc);
-        usleep(5000000);
-        moveRotate(false, inrspin, M_PI);
-    }
-    else {
-        turnLeft(90);
-        moveRotate(false, inrspin, 2 * M_PI - arc);
-        usleep(5000000);
-        moveRotate(true, inrspin, M_PI);
-    }*/
 }
 
 void Robot::updateRadar()

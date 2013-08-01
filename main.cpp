@@ -2,7 +2,8 @@
 #include "Robot.h"
 #include "calib.h"
 
-#define SOCKETBOT 1
+//Ö´ÐÐ¿ª¹Ø
+#define SOCKETBOT 0
 #define CALIB 0
 #define ROBOTTEST 0
 #define BALLTEST 0

@@ -1,4 +1,3 @@
-//#include "motor/motor_control.h"
 #include "motor/include/cmd.h"
 #include "motor/include/tty.h"
 #include "motor/include/ctrl.h"
@@ -22,17 +21,13 @@
 int fd;
 struct termios tio;
 
-
 static inline void cleanup()
 {
-    //sendSTOP();
     tcsetattr(0, TCSANOW, &tio);
-    //pthread_mutex_destroy(&task_mutex);
 }
 
 void motor_init()
 {
-    // init ttys
     if ((fd = ttys_init(0)) < 0) {
         exit(-1);
     }
@@ -43,7 +38,6 @@ void motor_init()
     if (atexit(cleanup)) {
         exit(-1);
     }
-    //task_segList = NULL;
 }
 
 double getRotateTime (int v, double arc)
@@ -51,7 +45,7 @@ double getRotateTime (int v, double arc)
     if (arc - ARC_DELAY <= 0)
         return 0;
     double dis = DIST_BETWEEN_WHEELS / 2;// rotate weel radius
-    double t = (arc-ARC_DELAY) * dis / v;
+    double t = (arc-ARC_DELAY) * dis / v;//ARC_DELAY用于减少惯性带来的误差
     return t * 1000000;
 }
 
@@ -88,7 +82,7 @@ void motor_turnRight(double arc) {
     return;
 }
 
-void goWithDistance(int dis, int spd) {
+void goWithDistance(int dis, int spd) {//梯形加减速带来精确的直线运动
 //dis is in cm; spd <= SPEED_LIMIT && spd mod 5 = 0
     if (spd > SPEED_LIMIT)
         return;
